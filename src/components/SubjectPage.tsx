@@ -1,4 +1,4 @@
-import { SUBJECTS } from '../data'
+import { ALL_SUBJECTS, PAPERS } from '../data'
 import { useProgress } from '../lib/progress'
 import { navigate } from '../App'
 
@@ -12,8 +12,9 @@ const STEP_ICONS: Record<string, string> = {
 
 export function SubjectPage({ subjectId }: { subjectId: string }) {
   const progress = useProgress()
-  const subject = SUBJECTS.find((s) => s.id === subjectId)
-  if (!subject) return <div className="p-10 text-zinc-400">Track not found.</div>
+  const subject = ALL_SUBJECTS.find((s) => s.id === subjectId)
+  const isPaper = PAPERS.some((p) => p.id === subjectId)
+  if (!subject) return <div className="p-10 text-zinc-400">{isPaper ? 'Paper' : 'Track'} not found.</div>
 
   const lessons = subject.modules.flatMap((m) => m.lessons)
   const done = lessons.filter((l) => progress.completed[l.id]).length
@@ -21,7 +22,7 @@ export function SubjectPage({ subjectId }: { subjectId: string }) {
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
       <button onClick={() => navigate('/')} className="text-xs text-zinc-500 hover:text-zinc-300">
-        ← All tracks
+        ← {isPaper ? 'Research papers' : 'All tracks'}
       </button>
       <div className="mt-4 flex items-center gap-4">
         <span className="text-4xl">{subject.icon}</span>

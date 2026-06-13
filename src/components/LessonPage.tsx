@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SUBJECTS } from '../data'
+import { ALL_SUBJECTS } from '../data'
 import { useProgress, completeLesson } from '../lib/progress'
 import { navigate } from '../App'
 import { Markdown } from '../lib/Markdown'
@@ -10,7 +10,7 @@ import { VisualizerPlayer } from './VisualizerPlayer'
 import type { Lesson, Subject } from '../types'
 
 function locate(lessonId: string): { subject: Subject; lesson: Lesson; next: Lesson | null } | null {
-  for (const subject of SUBJECTS) {
+  for (const subject of ALL_SUBJECTS) {
     const flat = subject.modules.flatMap((m) => m.lessons)
     const idx = flat.findIndex((l) => l.id === lessonId)
     if (idx !== -1) return { subject, lesson: flat[idx], next: flat[idx + 1] ?? null }

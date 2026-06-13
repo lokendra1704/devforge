@@ -1,16 +1,16 @@
-import { SUBJECTS } from '../data'
+import { SUBJECTS, PAPERS, ALL_SUBJECTS } from '../data'
 import { useProgress, levelInfo, levelTitle } from '../lib/progress'
 import { navigate } from '../App'
 
 export function Dashboard() {
   const progress = useProgress()
   const lvl = levelInfo(progress.xp)
-  const allLessons = SUBJECTS.flatMap((s) => s.modules.flatMap((m) => m.lessons))
+  const allLessons = ALL_SUBJECTS.flatMap((s) => s.modules.flatMap((m) => m.lessons))
   const totalDone = allLessons.filter((l) => progress.completed[l.id]).length
 
   // first incomplete lesson, in curriculum order
   const nextUp = (() => {
-    for (const s of SUBJECTS)
+    for (const s of ALL_SUBJECTS)
       for (const m of s.modules)
         for (const l of m.lessons)
           if (!progress.completed[l.id]) return { subject: s, lesson: l }
@@ -67,35 +67,48 @@ export function Dashboard() {
       <h2 className="mt-10 mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500">
         Tracks
       </h2>
-      <div className="grid sm:grid-cols-2 gap-4">
-        {SUBJECTS.map((s) => {
-          const lessons = s.modules.flatMap((m) => m.lessons)
-          const done = lessons.filter((l) => progress.completed[l.id]).length
-          const pct = Math.round((done / lessons.length) * 100)
-          return (
-            <button
-              key={s.id}
-              onClick={() => navigate(`/s/${s.id}`)}
-              className="text-left rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 hover:border-zinc-600 hover:bg-zinc-900/80 transition-all group"
-            >
-              <div className="flex items-start justify-between">
-                <span className="text-2xl">{s.icon}</span>
-                <span className="text-[11px] font-mono text-zinc-500">
-                  {done}/{lessons.length} lessons
-                </span>
-              </div>
-              <div className="mt-3 font-bold text-zinc-100 group-hover:text-white">{s.title}</div>
-              <p className="mt-1 text-[13px] text-zinc-400 leading-5">{s.tagline}</p>
-              <div className="mt-4 h-1 rounded-full bg-zinc-800 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${pct}%`, background: s.accent }}
-                />
-              </div>
-            </button>
-          )
-        })}
-      </div>
+      <div className="grid sm:grid-cols-2 gap-4">{SUBJECTS.map((s) => renderSubjectCard(s))}</div>
+
+      {/* research papers grid */}
+      {PAPERS.length > 0 && (
+        <>
+          <h2 className="mt-10 mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500">
+            Research Papers
+          </h2>
+          <p className="mt-[-12px] mb-4 text-[13px] text-zinc-500">
+            Curated breakdowns of research papers, broken into bite-sized lessons.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">{PAPERS.map((s) => renderSubjectCard(s))}</div>
+        </>
+      )}
     </div>
   )
+
+  function renderSubjectCard(s: (typeof ALL_SUBJECTS)[number]) {
+    const lessons = s.modules.flatMap((m) => m.lessons)
+    const done = lessons.filter((l) => progress.completed[l.id]).length
+    const pct = Math.round((done / lessons.length) * 100)
+    return (
+      <button
+        key={s.id}
+        onClick={() => navigate(`/s/${s.id}`)}
+        className="text-left rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 hover:border-zinc-600 hover:bg-zinc-900/80 transition-all group"
+      >
+        <div className="flex items-start justify-between">
+          <span className="text-2xl">{s.icon}</span>
+          <span className="text-[11px] font-mono text-zinc-500">
+            {done}/{lessons.length} lessons
+          </span>
+        </div>
+        <div className="mt-3 font-bold text-zinc-100 group-hover:text-white">{s.title}</div>
+        <p className="mt-1 text-[13px] text-zinc-400 leading-5">{s.tagline}</p>
+        <div className="mt-4 h-1 rounded-full bg-zinc-800 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{ width: `${pct}%`, background: s.accent }}
+          />
+        </div>
+      </button>
+    )
+  }
 }

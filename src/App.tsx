@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { SUBJECTS } from './data'
+import { SUBJECTS, PAPERS, ALL_SUBJECTS } from './data'
 import { useProgress, levelInfo, levelTitle } from './lib/progress'
 import { Dashboard } from './components/Dashboard'
 import { SubjectPage } from './components/SubjectPage'
@@ -35,16 +35,41 @@ export default function App() {
   }, [])
 
   const subjectLessons = (sid: string) =>
-    SUBJECTS.find((s) => s.id === sid)!.modules.flatMap((m) => m.lessons)
+    ALL_SUBJECTS.find((s) => s.id === sid)!.modules.flatMap((m) => m.lessons)
 
   const activeSubjectId =
     route.view === 'subject'
       ? route.subjectId
       : route.view === 'lesson'
-        ? SUBJECTS.find((s) =>
+        ? ALL_SUBJECTS.find((s) =>
             s.modules.some((m) => m.lessons.some((l) => l.id === route.lessonId)),
           )?.id
         : undefined
+
+  const renderNavItem = (s: (typeof ALL_SUBJECTS)[number]) => {
+    const lessons = subjectLessons(s.id)
+    const done = lessons.filter((l) => progress.completed[l.id]).length
+    const active = s.id === activeSubjectId
+    return (
+      <button
+        key={s.id}
+        onClick={() => navigate(`/s/${s.id}`)}
+        className={`w-full text-left px-5 py-2.5 flex items-center gap-3 text-sm transition-colors border-l-2 ${
+          active
+            ? 'border-emerald-400 bg-zinc-900/80 text-zinc-100'
+            : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+        }`}
+      >
+        <span className="text-base">{s.icon}</span>
+        <span className="flex-1 truncate">{s.title}</span>
+        <span
+          className={`text-[10px] font-mono ${done === lessons.length ? 'text-emerald-400' : 'text-zinc-600'}`}
+        >
+          {done}/{lessons.length}
+        </span>
+      </button>
+    )
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -61,30 +86,13 @@ export default function App() {
         </button>
 
         <nav className="flex-1 py-3">
-          {SUBJECTS.map((s) => {
-            const lessons = subjectLessons(s.id)
-            const done = lessons.filter((l) => progress.completed[l.id]).length
-            const active = s.id === activeSubjectId
-            return (
-              <button
-                key={s.id}
-                onClick={() => navigate(`/s/${s.id}`)}
-                className={`w-full text-left px-5 py-2.5 flex items-center gap-3 text-sm transition-colors border-l-2 ${
-                  active
-                    ? 'border-emerald-400 bg-zinc-900/80 text-zinc-100'
-                    : 'border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
-                }`}
-              >
-                <span className="text-base">{s.icon}</span>
-                <span className="flex-1 truncate">{s.title}</span>
-                <span
-                  className={`text-[10px] font-mono ${done === lessons.length ? 'text-emerald-400' : 'text-zinc-600'}`}
-                >
-                  {done}/{lessons.length}
-                </span>
-              </button>
-            )
-          })}
+          {SUBJECTS.map((s) => renderNavItem(s))}
+          {PAPERS.length > 0 && (
+            <div className="px-5 pt-4 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+              Research Papers
+            </div>
+          )}
+          {PAPERS.map((s) => renderNavItem(s))}
         </nav>
 
         {/* player card */}

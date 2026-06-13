@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SUBJECTS } from './index'
+import { ALL_SUBJECTS } from './index'
 import type { CodeChallenge } from '../types'
 
 // Mirrors the harness in lib/runner.ts (worker), so a solution that passes
@@ -55,7 +55,7 @@ const challenges: { path: string; challenge: CodeChallenge }[] = []
 const quizzes: { path: string; q: { prompt: string; options: string[]; answer: number; explanation: string } }[] = []
 const scenarios: { path: string; stages: { options: { quality: string }[] }[] }[] = []
 
-for (const s of SUBJECTS)
+for (const s of ALL_SUBJECTS)
   for (const m of s.modules)
     for (const l of m.lessons)
       for (const [i, step] of l.steps.entries()) {
@@ -117,7 +117,7 @@ describe('every scenario stage', () => {
 
 describe('curriculum integrity', () => {
   it('lesson ids are globally unique', () => {
-    const ids = SUBJECTS.flatMap((s) => s.modules.flatMap((m) => m.lessons.map((l) => l.id)))
+    const ids = ALL_SUBJECTS.flatMap((s) => s.modules.flatMap((m) => m.lessons.map((l) => l.id)))
     expect(new Set(ids).size).toBe(ids.length)
   })
 })

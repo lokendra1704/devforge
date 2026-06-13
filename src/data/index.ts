@@ -9,6 +9,7 @@ import { parallelism } from './parallelism'
 import { inferenceEngineering } from './inference-engineering'
 import { appliedProbability } from './applied-probability'
 import { systemDesignInterview } from './system-design-interview'
+import { codeAsAgentHarness } from './code-as-agent-harness'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -22,3 +23,8 @@ export const SUBJECTS: Subject[] = [
   appliedProbability,
   systemDesignInterview,
 ]
+
+/** Research papers, onboarded the same way as books but surfaced in their own section. */
+export const PAPERS: Subject[] = [codeAsAgentHarness]
+
+export const ALL_SUBJECTS: Subject[] = [...SUBJECTS, ...PAPERS]
