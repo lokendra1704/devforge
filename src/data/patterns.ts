@@ -2,6 +2,7 @@ import type { Subject } from '../types'
 import wildMd from './md/dp-wild.md?raw'
 import observerMd from './md/dp-observer.md?raw'
 import strategyMd from './md/dp-strategy.md?raw'
+import factoryMd from './md/dp-factory.md?raw'
 import catalogMd from './md/dp-catalog.md?raw'
 
 export const patterns: Subject = {
@@ -77,8 +78,8 @@ export const patterns: Subject = {
     },
     {
       id: 'dp-m2',
-      title: 'Build the Big Two',
-      description: 'Observer and Strategy — the patterns you will use weekly, forever.',
+      title: 'Build the Workhorses',
+      description: 'Observer, Strategy, and Factory — derived the long way, the way the book teaches them.',
       lessons: [
         {
           id: 'dp-observer',
@@ -256,11 +257,11 @@ test('emit passes multiple arguments', () => {
         },
         {
           id: 'dp-strategy',
-          title: 'Strategy & Factory: kill the if-else jungle',
+          title: 'Strategy: derive a pattern from a breaking design',
           minutes: 25,
           xp: 120,
           steps: [
-            { kind: 'read', title: 'From branches to objects', markdown: strategyMd },
+            { kind: 'read', title: 'Watch SimUDuck break, then fix it', markdown: strategyMd },
             {
               kind: 'code',
               title: 'Build the fare system',
@@ -362,6 +363,262 @@ test('adding a strategy without touching the calculator (open/closed)', () => {
             },
             {
               kind: 'quiz',
+              title: 'The SimUDuck checkpoint',
+              questions: [
+                {
+                  prompt:
+                    'The book asks: which of these is NOT a disadvantage of using inheritance (putting fly()/quack() in the Duck superclass) to provide duck behavior?',
+                  options: [
+                    'Code is duplicated across subclasses',
+                    'Runtime behavior changes are difficult',
+                    'It’s hard to gain knowledge of all duck behaviors',
+                    'Ducks can’t fly and quack at the same time',
+                  ],
+                  answer: 3,
+                  explanation:
+                    'From the p43 exercise. The real disadvantages are duplicated code, hard runtime changes, hard-to-survey behaviors, and changes unintentionally affecting other ducks (flying rubber ducks). "Can’t fly and quack at the same time" is a made-up distractor — nothing about inheritance prevents calling both methods.',
+                },
+                {
+                  prompt:
+                    'Using the final SimUDuck design (Duck composes a FlyBehavior typed to an interface), the execs want rocket-powered flying. The senior move is to:',
+                  options: [
+                    'Add a fly() override to every duck that should use rockets',
+                    'Create a FlyRocketPowered class that implements the FlyBehavior interface, and set it on any duck — touching zero existing Duck or behavior code',
+                    'Add an if (rocketPowered) branch inside Duck.performFly()',
+                    'Make Duck.fly() abstract again so each duck writes its own rocket code',
+                  ],
+                  answer: 1,
+                  explanation:
+                    'The book’s own answer (p52): "Create a FlyRocketPowered class that implements the FlyBehavior interface." Because Duck programs to the FlyBehavior interface, a brand-new algorithm slots in via setFlyBehavior() with no edits to Duck or the other behaviors — open for extension, closed for modification.',
+                },
+                {
+                  prompt:
+                    'A hunting-supply app has a DuckCall device that should QUACK but is in no way a Duck. How does the SimUDuck design let it reuse the Quack behavior?',
+                  options: [
+                    'DuckCall extends Duck to inherit quack()',
+                    'DuckCall HAS-A QuackBehavior (it composes itself with a Quack object) — reuse without inheritance',
+                    'Copy the Quack code into DuckCall',
+                    'It can’t — quacking is only available to Duck subclasses',
+                  ],
+                  answer: 1,
+                  explanation:
+                    'This is the p61 "HAS-A can be better than IS-A" exercise. Because the quack algorithm lives in its own class behind QuackBehavior, ANY object can compose itself with a Quack — "instead of inheriting their behavior, [objects] get their behavior by being composed with the right behavior object." Favor composition over inheritance.',
+                },
+              ],
+            },
+            {
+              kind: 'quiz',
+              title: 'Spot Strategy in the wild',
+              questions: [
+                {
+                  prompt:
+                    'Map the formal definition to SimUDuck: "Strategy defines a family of algorithms, encapsulates each one, and makes them interchangeable." In the duck app, what plays the role of "the client that the algorithm varies independently from"?',
+                  options: [
+                    'The FlyWithWings class',
+                    'The Duck class (via performFly), which holds a FlyBehavior reference and never knows the concrete behavior',
+                    'The main() test method',
+                    'The FlyBehavior interface itself',
+                  ],
+                  answer: 1,
+                  explanation:
+                    'The "family of algorithms" is FlyWithWings/FlyNoWay; the "client" is Duck, which calls flyBehavior.fly() through the interface. The algorithm "varies independently from the client" precisely because Duck is coupled only to FlyBehavior, never to a concrete flying class.',
+                },
+                {
+                  prompt:
+                    'Your app must export reports as PDF, CSV, or Excel. The export flow is identical; only the file-writing step differs, and you swap formats per request. Which pattern — and why is it Strategy, not Factory?',
+                  options: [
+                    'Factory — because you are choosing between types',
+                    'Strategy — one stable algorithm with a swappable, interchangeable step (the writer) selected at runtime; Factory only handles who CREATES the writer, not the interchangeable behavior',
+                    'Observer — the report notifies the writer',
+                    'Singleton — there is one exporter',
+                  ],
+                  answer: 1,
+                  explanation:
+                    'A fixed algorithm (gather → format → write) with one interchangeable behavior object is the Strategy signature — each writer is a strategy behind one interface. A factory might *pick* which writer to instantiate, but the pattern that makes the writer swappable is Strategy. The two often pair up (as in this lesson’s fare challenge).',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          id: 'dp-factory',
+          title: 'Factory: corral the new keyword',
+          minutes: 25,
+          xp: 120,
+          steps: [
+            { kind: 'read', title: 'From the pizza if/else to Factory Method', markdown: factoryMd },
+            {
+              kind: 'code',
+              title: 'Build the PizzaStore (Factory Method)',
+              challenge: {
+                prompt: `## Factory Method: the franchise PizzaStore
+
+Build the book's pizza framework. The **template** (\`prepare → bake → cut → box\`) lives once in the abstract \`PizzaStore\`; the one varying step — *which* pizza to create — is deferred to subclasses.
+
+**1.** Finish \`PizzaStore.orderPizza(type)\`: call the factory method \`createPizza(type)\`, then \`prepare()\`, \`bake()\`, \`cut()\`, \`box()\` it (in that order), and return it. Leave \`createPizza\` **abstract** (it throws on the base class).
+
+**2.** \`NYPizzaStore.createPizza(type)\`:
+- \`'cheese'\` → \`new Pizza('NY Style Cheese Pizza')\`
+- \`'veggie'\` → \`new Pizza('NY Style Veggie Pizza')\`
+- anything else → **throw**
+
+**3.** \`ChicagoPizzaStore.createPizza(type)\`:
+- \`'cheese'\` → \`new Pizza('Chicago Style Deep Dish Cheese Pizza')\`
+- \`'veggie'\` → \`new Pizza('Chicago Style Veggie Pizza')\`
+- anything else → **throw**
+
+**The point the tests check:** \`orderPizza\` never names a concrete pizza — adding a new region is a new subclass, with zero edits to \`orderPizza\`.`,
+                starterCode: `class Pizza {
+  constructor(name) { this.name = name; this.steps = []; }
+  prepare() { this.steps.push('prepare ' + this.name); }
+  bake()    { this.steps.push('bake'); }
+  cut()     { this.steps.push('cut'); }
+  box()     { this.steps.push('box'); }
+}
+
+class PizzaStore {
+  // The factory method — abstract. Subclasses MUST implement it.
+  createPizza(type) {
+    throw new Error('createPizza is abstract: subclass must implement');
+  }
+
+  orderPizza(type) {
+    // 1. const pizza = this.createPizza(type)
+    // 2. prepare(), bake(), cut(), box()
+    // 3. return pizza
+
+  }
+}
+
+class NYPizzaStore extends PizzaStore {
+  // implement createPizza for NY styles; throw on unknown
+
+}
+
+class ChicagoPizzaStore extends PizzaStore {
+  // implement createPizza for Chicago styles; throw on unknown
+
+}`,
+                solution: `class Pizza {
+  constructor(name) { this.name = name; this.steps = []; }
+  prepare() { this.steps.push('prepare ' + this.name); }
+  bake()    { this.steps.push('bake'); }
+  cut()     { this.steps.push('cut'); }
+  box()     { this.steps.push('box'); }
+}
+
+class PizzaStore {
+  createPizza(type) {
+    throw new Error('createPizza is abstract: subclass must implement');
+  }
+
+  orderPizza(type) {
+    const pizza = this.createPizza(type);
+    pizza.prepare();
+    pizza.bake();
+    pizza.cut();
+    pizza.box();
+    return pizza;
+  }
+}
+
+class NYPizzaStore extends PizzaStore {
+  createPizza(type) {
+    if (type === 'cheese') return new Pizza('NY Style Cheese Pizza');
+    if (type === 'veggie') return new Pizza('NY Style Veggie Pizza');
+    throw new Error('Unknown pizza: ' + type);
+  }
+}
+
+class ChicagoPizzaStore extends PizzaStore {
+  createPizza(type) {
+    if (type === 'cheese') return new Pizza('Chicago Style Deep Dish Cheese Pizza');
+    if (type === 'veggie') return new Pizza('Chicago Style Veggie Pizza');
+    throw new Error('Unknown pizza: ' + type);
+  }
+}`,
+                tests: `test('NY store makes a NY-style pizza via the inherited orderPizza', () => {
+  const ny = new NYPizzaStore();
+  assertEqual(ny.orderPizza('cheese').name, 'NY Style Cheese Pizza');
+});
+test('Chicago store makes a Chicago-style pizza from the SAME orderPizza method', () => {
+  const chi = new ChicagoPizzaStore();
+  assertEqual(chi.orderPizza('cheese').name, 'Chicago Style Deep Dish Cheese Pizza');
+});
+test('orderPizza runs the full template in order: prepare, bake, cut, box', () => {
+  const pizza = new NYPizzaStore().orderPizza('veggie');
+  assertEqual(pizza.steps, ['prepare NY Style Veggie Pizza', 'bake', 'cut', 'box']);
+});
+test('createPizza is abstract on the base PizzaStore', () => {
+  let threw = false;
+  try { new PizzaStore().createPizza('cheese'); } catch { threw = true; }
+  assertEqual(threw, true);
+});
+test('ordering from the abstract base store fails — no factory method implemented', () => {
+  let threw = false;
+  try { new PizzaStore().orderPizza('cheese'); } catch { threw = true; }
+  assertEqual(threw, true);
+});
+test('unknown pizza type throws', () => {
+  let threw = false;
+  try { new NYPizzaStore().orderPizza('helicopter'); } catch { threw = true; }
+  assertEqual(threw, true);
+});
+test('adding a new region is purely additive (open/closed) — orderPizza is untouched', () => {
+  class CaliforniaPizzaStore extends PizzaStore {
+    createPizza(type) {
+      if (type === 'cheese') return new Pizza('California Style Cheese Pizza');
+      throw new Error('Unknown pizza: ' + type);
+    }
+  }
+  const pizza = new CaliforniaPizzaStore().orderPizza('cheese');
+  assertEqual(pizza.name, 'California Style Cheese Pizza');
+  assertEqual(pizza.steps, ['prepare California Style Cheese Pizza', 'bake', 'cut', 'box']);
+});`,
+              },
+            },
+            {
+              kind: 'quiz',
+              title: 'Counting the cost of new',
+              questions: [
+                {
+                  prompt:
+                    'The book’s "very dependent" PizzaStore skips factories and instantiates every pizza with new — 4 NY styles + 4 Chicago styles — directly in its orderPizza method. How many concrete pizza classes does it depend on, and how many after you add 4 California styles?',
+                  options: ['4, then 8', '8, then 12', '2, then 3', '8, then 8'],
+                  answer: 1,
+                  explanation:
+                    'The p175 counting exercise: 4 + 4 = 8 concrete dependencies, and every new pizza adds one — so California makes it 12. That growing pile of concrete dependencies is exactly what the factory removes.',
+                },
+                {
+                  prompt:
+                    'After applying Factory Method to the pizza store, why does it now satisfy the Dependency Inversion Principle?',
+                  options: [
+                    'PizzaStore no longer depends on anything at all',
+                    'Both PizzaStore (high-level) and the concrete pizzas (low-level) depend on the Pizza abstraction — the arrows that used to point down at concrete classes are inverted',
+                    'The pizzas now depend on PizzaStore instead',
+                    'There are simply fewer classes overall',
+                  ],
+                  answer: 1,
+                  explanation:
+                    'DIP (p177): "Depend upon abstractions." Before, PizzaStore pointed down at 8+ concrete pizzas. After Factory Method, PizzaStore depends only on the abstract Pizza, and each concrete pizza also depends on Pizza — high-level and low-level meet at the same abstraction. That redirection is the "inversion."',
+                },
+                {
+                  prompt:
+                    'In the final design, PizzaStore is a Factory Method but PizzaIngredientFactory is an Abstract Factory. What justifies the different choice?',
+                  options: [
+                    'PizzaStore needs ONE product that varies by region (subclass overrides createPizza → Factory Method); the ingredient factory must produce a whole MATCHING FAMILY — dough + sauce + cheese + … — so the family can’t be mixed (→ Abstract Factory)',
+                    'They are interchangeable; the choice was arbitrary',
+                    'PizzaStore makes families while ingredient factories make a single product',
+                    'Abstract Factory is just a Factory Method that happens to have more subclasses',
+                  ],
+                  answer: 0,
+                  explanation:
+                    'p198–199: the shape of the variation picks the pattern. One product varying by subclass → Factory Method. A whole family of related products that must stay consistent (never a NY sauce on a Chicago pizza) → Abstract Factory.',
+                },
+              ],
+            },
+            {
+              kind: 'quiz',
               title: 'Which factory?',
               questions: [
                 {
@@ -370,7 +627,7 @@ test('adding a strategy without touching the calculator (open/closed)', () => {
                   options: ['Simple Factory', 'Factory Method', 'Abstract Factory', 'Singleton'],
                   answer: 0,
                   explanation:
-                    "One function, type string in, one object out — exactly pricingFor's shape. No subclass is deciding anything, and there's no family of related objects to keep in sync, so Factory Method or Abstract Factory would be pure overhead.",
+                    "One function, type string in, one object out — exactly the SimplePizzaFactory / pricingFor shape. No subclass decides anything and there's no family to keep in sync, so Factory Method or Abstract Factory would be pure overhead. (Remember: Simple Factory is an idiom, not a true GoF pattern.)",
                 },
                 {
                   prompt:
@@ -388,6 +645,19 @@ test('adding a strategy without touching the calculator (open/closed)', () => {
                   explanation:
                     'Multiple related products (Button, Checkbox, Slider) that must come from the SAME family, with mixing forbidden — the ingredient-factory problem: one ThemeFactory interface, LightThemeFactory and DarkThemeFactory implementations, each guaranteed to produce a matching set.',
                 },
+                {
+                  prompt:
+                    "The book's interview settles the Factory Method vs Abstract Factory confusion by their mechanism. What's the core difference in HOW they create objects?",
+                  options: [
+                    'Factory Method uses object composition; Abstract Factory uses inheritance',
+                    'Factory Method uses inheritance — a subclass overrides one factory method; Abstract Factory uses object composition — you pass in a factory object that makes a whole family',
+                    'They are identical; the names are interchangeable',
+                    'Factory Method makes families of products; Abstract Factory makes exactly one',
+                  ],
+                  answer: 1,
+                  explanation:
+                    'p197: "I do it through inheritance" (Factory Method — extend a class, implement the factory method) vs. "I do it through object composition" (Abstract Factory — instantiate a factory and pass it into code written against the abstract type). The methods of an Abstract Factory are often themselves implemented as factory methods.',
+                },
               ],
             },
           ],
@@ -402,10 +672,10 @@ test('adding a strategy without touching the calculator (open/closed)', () => {
         {
           id: 'dp-picker',
           title: 'Pattern picker: real scenarios',
-          minutes: 14,
-          xp: 90,
+          minutes: 18,
+          xp: 110,
           steps: [
-            { kind: 'read', title: 'Organizing the pattern catalog', markdown: catalogMd },
+            { kind: 'read', title: 'What a pattern is — and when not to use one', markdown: catalogMd },
             {
               kind: 'quiz',
               title: 'Choose wisely',
@@ -485,6 +755,64 @@ test('adding a strategy without touching the calculator (open/closed)', () => {
                   answer: 1,
                   explanation:
                     "The design system needs a whole MATCHING SET of related products (Button+Input+Card) that must never mix brands — Abstract Factory's signature. ReportBuilder has ONE fixed algorithm with ONE creation step deferred to subclasses — Factory Method's signature. Sharing the word 'Factory' isn't a categorization rule; the shape of the variation is.",
+                },
+              ],
+            },
+            {
+              kind: 'quiz',
+              title: 'Catalog & judgment (book drills)',
+              questions: [
+                {
+                  prompt:
+                    'From the book’s "Who Does What?" drill — match the intent: "Encapsulates interchangeable behaviors and uses delegation to decide which one to use." Which pattern, and which one is its easy-to-confuse neighbor?',
+                  options: [
+                    'State — neighbor is Strategy',
+                    'Strategy — its neighbor State sounds identical ("encapsulates state-based behaviors and uses delegation to switch between them") but switches behavior based on internal state',
+                    'Template Method — neighbor is Factory Method',
+                    'Observer — neighbor is Command',
+                  ],
+                  answer: 1,
+                  explanation:
+                    'p612 intents. Strategy and State both encapsulate behaviors and delegate — the catalog’s value is precisely these side-by-side intents. State adds: the object switches which behavior is active as its internal state changes; Strategy’s behavior is chosen by the client.',
+                },
+                {
+                  prompt:
+                    'The GoF scheme sorts patterns into Creational, Behavioral, and Structural by purpose. Into which category does Observer fall, and into which does Factory Method fall?',
+                  options: [
+                    'Observer → Structural; Factory Method → Behavioral',
+                    'Observer → Behavioral; Factory Method → Creational',
+                    'Both are Creational',
+                    'Observer → Creational; Factory Method → Structural',
+                  ],
+                  answer: 1,
+                  explanation:
+                    'p613. Observer is Behavioral (it’s about how objects interact and distribute responsibility — notification). Factory Method is Creational (it’s about object instantiation, decoupling a client from what it creates).',
+                },
+                {
+                  prompt:
+                    'Many developers expect Decorator to be a Behavioral pattern "because it adds behavior." The GoF file it under Structural. What’s the reasoning?',
+                  options: [
+                    'It was a historical mistake in the catalog',
+                    'A pattern’s category is decided by its INTENT: Decorator’s intent is to compose objects (wrap one in another) to form new structures/functionality, not to manage communication between objects — which is what Behavioral patterns do',
+                    'Decorator never actually adds behavior',
+                    'Any pattern that uses wrapping is automatically Structural',
+                  ],
+                  answer: 1,
+                  explanation:
+                    'p615: "the intent of these patterns is different, and that’s often the key to understanding which category a pattern belongs to." Decorator’s focus is composing objects dynamically to gain functionality (structure), not the interconnection/communication that defines Behavioral patterns.',
+                },
+                {
+                  prompt:
+                    'A service you built three years ago uses a Strategy + Factory with five swappable implementations. Four were deleted; only one remains and no new ones are planned. A junior wants to keep the pattern "in case we need it." The Zen-mind answer?',
+                  options: [
+                    'Keep it — removing a pattern is bad practice',
+                    'Remove the pattern: the flexibility you planned for isn’t needed, so a simpler solution without it would be better — and adding patterns for hypothetical (not practical) change just adds complexity',
+                    'Add more strategies so the pattern earns its place',
+                    'Convert it to a Singleton for consistency',
+                  ],
+                  answer: 1,
+                  explanation:
+                    'p619: "When do you remove a pattern? When... the flexibility you planned for isn’t needed... when a simpler solution without the pattern would be better." The Zen mind chases the simplest thing that solves the problem and only keeps patterns that handle practical, likely change.',
                 },
               ],
             },

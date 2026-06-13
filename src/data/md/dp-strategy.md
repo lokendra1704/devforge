@@ -1,97 +1,210 @@
-# Strategy & Factory: kill the if-else jungle
+# Strategy: discover a pattern by watching a design break
 
-## The smell
+This is the longest read in the subject, and on purpose. The Strategy Pattern is easy to
+*state* and hard to *feel* — so we'll do what the book does: take the long road. We'll
+watch Joe's duck app break, fix it the wrong way twice, then derive the pattern from three
+plain OO principles. By the end the formal definition should read like a description of
+something you already understand.
 
-Your ride-hailing app computes fares. It starts innocently, then product management happens:
+## It started with a simple SimUDuck app
 
-```js
-function calculateFare(trip, rideType) {
-  if (rideType === 'economy') {
-    return 30 + trip.km * 12;
-  } else if (rideType === 'premium') {
-    return 80 + trip.km * 22;
-  } else if (rideType === 'shared') {
-    let fare = 20 + trip.km * 8;
-    if (trip.riders > 1) fare *= 0.9;
-    return fare;
-  } else if (rideType === 'xl') { /* ... */ }
-  // 14 more branches, surge pricing mixed in, nobody dares touch it
-}
-```
+> "Joe works for a company that makes a highly successful duck pond simulation game,
+> SimUDuck. The game can show a large variety of duck species swimming and making quacking
+> sounds. The initial designers... created one Duck superclass from which all other duck
+> types inherit." — Ch1, p40
 
-Symptoms: every new ride type edits this function (and risks every existing type); testing one branch means wading through all; surge logic gets copy-pasted into three branches and drifts apart. The `if-else` on a *type tag* is the smell.
+So far, textbook OO. `Duck` has `quack()`, `swim()`, and an abstract `display()` (every duck
+looks different). `MallardDuck` and `RedheadDuck` extend it. Reuse via inheritance — clean.
 
-## Strategy: each behavior becomes an object
+Then the executives want a demo that blows away the competition: **the ducks need to fly.**
+Joe's manager volunteers him. *"He's an OO programmer… how hard can it be?"*
 
-Pull each variant behind one interface:
+## But something went horribly wrong
 
-```js
-const economyPricing = { base: 30, perKm: 12, adjust: (fare) => fare };
-const sharedPricing  = {
-  base: 20, perKm: 8,
-  adjust: (fare, trip) => trip.riders > 1 ? fare * 0.9 : fare,
-};
+Joe does the obvious thing — adds `fly()` to the `Duck` superclass so every duck inherits it:
 
-function calculateFare(trip, pricing) {       // depends on the INTERFACE
-  return pricing.adjust(pricing.base + trip.km * pricing.perKm, trip);
-}
-```
+> "Joe failed to notice that not all subclasses of Duck should fly. When Joe added new
+> behavior to the Duck superclass, he was also adding behavior that was not appropriate for
+> some Duck subclasses. He now has flying inanimate objects in the SimUDuck program."
+> — Ch1, p42
 
-Now: new ride type = new object, zero edits to existing code (the **Open/Closed Principle** — open for extension, closed for modification). Each strategy unit-tests in isolation. In JS, a strategy can be a plain object or even just a function — no class ceremony required.
+`RubberDuck` inherited `fly()`. At the shareholders' meeting, **rubber duckies were flying
+around the screen.** The book's one-line diagnosis is the whole lesson:
 
-> "The Strategy Pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable. Strategy lets the algorithm vary independently from clients that use it." — Ch1, p62
-
-This is the SimUDuck principles, named. `economyPricing`, `premiumPricing`, `sharedPricing` are this lesson's `FlyBehavior`/`QuackBehavior` family — each *encapsulates* one algorithm (Principle 1: encapsulate what varies). `calculateFare(trip, pricing)` is *programmed to the interface* `{ base, perKm, adjust }`, never to a specific pricing object (Principle 2) — exactly how `Duck.performFly()` calls `flyBehavior.fly()` without knowing which behavior it holds.
-
-## Factory: centralize the choosing
-
-One question remains: who picks the strategy from the string `"shared"` that came over the API? If every call site does its own `if (type === ...)`, you've just smeared the jungle around. Put the mapping in **one place**:
-
-```js
-const PRICING = { economy: economyPricing, premium: premiumPricing, shared: sharedPricing };
-
-function pricingFor(rideType) {              // the factory
-  const p = PRICING[rideType];
-  if (!p) throw new Error('Unknown ride type: ' + rideType);
-  return p;
-}
-```
-
-Strategy says *behaviors are swappable objects*; Factory says *the choosing happens in exactly one place*. They're a couple — you'll almost always deploy them together: `calculateFare(trip, pricingFor(type))`.
-
-## Simple Factory vs Factory Method vs Abstract Factory
-
-`pricingFor` above is what the book calls a **Simple Factory**: one function, a type string in, one object out. It's the workhorse you'll reach for most of the time — but the GoF catalog has two heavier relatives for when "one function with a switch" stops being enough.
-
-> "The Simple Factory isn't actually a Design Pattern; it's more of a programming idiom. But it is commonly used, so we'll give it a Head First Pattern Honorable Mention." — Ch4, p155
-
-**Factory Method** kicks in when the *choice itself* needs to vary by **subclass**, not by an argument you pass in. Picture a `PizzaStore` whose `orderPizza()` runs the shared steps (prepare, bake, cut, box), but the one step that creates the pizza — `createPizza()` — is left abstract; `NYPizzaStore` and `ChicagoPizzaStore` subclasses each override just that step to return their region's pizza:
-
-> "The Factory Method Pattern defines an interface for creating an object, but lets subclasses decide which class to instantiate. Factory Method lets a class defer instantiation to subclasses." — Ch4, p172
-
-**Abstract Factory** kicks in when you need a whole **matching set** of related objects, not just one — and the sets must never get mixed. A `NYPizzaIngredientFactory` and a `ChicagoPizzaIngredientFactory` each produce a *dough + sauce + cheese + clams* family; hand a New York pizza the Chicago factory and you get the wrong cheese on every pizza, not just one ingredient.
-
-> "The Abstract Factory Pattern provides an interface for creating families of related or dependent objects without specifying their concrete classes." — Ch4, p194
+> "A localized update to the code caused a non-local side effect (flying rubber ducks)!"
+> — Ch1, p42
 
 ```mermaid
-flowchart LR
-  SF["Simple Factory<br/>one function: type string → one object<br/>(pricingFor)"] -->|"the choice itself needs to vary<br/>by SUBCLASS, not by argument"| FM["Factory Method<br/>subclass overrides ONE creation step<br/>inside a shared algorithm"]
-  FM -->|"need a whole MATCHING SET<br/>of related objects, not just one"| AF["Abstract Factory<br/>one factory interface creates<br/>an entire product family"]
+flowchart TD
+  D["Duck superclass<br/>add fly()"] --> M["MallardDuck<br/>✅ inherits fly()"]
+  D --> R["RubberDuck<br/>❌ inherits fly() — shouldn't"]
+  D --> De["DecoyDuck<br/>❌ inherits fly() AND quack()"]
+  R --> O1["override fly() to do nothing"]
+  De --> O2["override fly() AND quack()<br/>to do nothing"]
+  O1 --> X["...and repeat for every<br/>future non-flying duck, forever"]
+  O2 --> X
 ```
 
-All three share the same underlying move: encapsulate object creation behind an interface so the rest of the code depends on abstractions, not concretes.
+## Two wrong turns
 
-> Design Principle: "Depend upon abstractions. Do not depend upon concrete classes." — Ch4, p177
+**Wrong turn 1 — keep overriding.** Joe can override `fly()` to do nothing in `RubberDuck`,
+and `quack()` too in `DecoyDuck`. But the execs now want to update the product *every six
+months*. Every new duck type means hunting down and possibly overriding `fly()`/`quack()`
+again — forever. Inheritance has made the thing that changes most the hardest to change.
 
-This **Dependency Inversion Principle** is a stronger cousin of "program to an interface": it says *both* the high-level code (`PizzaStore`, `calculateFare`) *and* the low-level objects (`NYStyleCheesePizza`, `premiumPricing`) should depend on a shared abstraction, with neither one reaching directly for the other's concrete type.
+**Wrong turn 2 — interfaces.** Joe pulls `fly()` into a `Flyable` interface and `quack()`
+into `Quackable`, so only ducks that should fly implement `Flyable`. This fixes the flying
+rubber ducks — but a Java interface has no code, so **every flying duck re-implements
+`fly()` from scratch.** Change the flying behavior and you edit it in all 48 flying
+subclasses. The book's narrator is blunt:
 
-## Real-world sightings
+> "Can you say, 'duplicate code'? If you thought having to override a few methods was bad,
+> how are you gonna feel when you need to make a little change to the flying behavior...in
+> all 48 of the flying Duck subclasses?!" — Ch1, p45
 
-- Payment processing: `processorFor('upi' | 'card' | 'paypal')`
-- Compression: zip/gzip/brotli behind one `compress()` interface
-- Auth: OAuth/SAML/password strategies (the passport.js library is literally named for carrying strategies)
-- React: passing a render function or comparator prop — Strategy without the name
+So: inheritance gives reuse but no flexibility; interfaces give flexibility but no reuse.
+We need both. Time for principles.
 
-## The challenge ahead
+## Principle 1: identify what varies, and encapsulate it
 
-You'll build the fare system: three pricing strategies + a factory + the calculator, with a surge multiplier applied uniformly (in ONE place — the calculator), not copy-pasted into each strategy. The tests check exactly the mistakes real candidates make.
+> "The one constant in software development: **CHANGE.**" — Ch1, p46
+
+What changes here? `fly()` and `quack()` — they vary across ducks and across releases.
+What *doesn't* change? Swimming, the existence of ducks, `display()` being per-type. The
+first design principle names the move:
+
+> "Identify the aspects of your application that vary and separate them from what stays the
+> same." — Ch1, p47 (Design Principle 1)
+
+> "Take the parts that vary and **encapsulate** them, so that later you can alter or extend
+> the parts that vary without affecting those that don't." — Ch1, p47
+
+So we pull `fly` and `quack` *out* of `Duck` entirely, into two new sets of classes — one
+per behavior. Flying gets `FlyWithWings`, `FlyNoWay`; quacking gets `Quack`, `Squeak`,
+`MuteQuack`.
+
+## Principle 2: program to an interface, not an implementation
+
+How do those behavior classes connect back to `Duck`? Through an interface. We define
+`FlyBehavior` (with `fly()`) and `QuackBehavior` (with `quack()`), and each concrete
+behavior implements one of them.
+
+> "Program to an interface, not an implementation." — Ch1, p49 (Design Principle 2)
+
+The book is careful that "interface" here is the *concept*, not the Java keyword:
+
+> "'Program to an interface' really means 'Program to a supertype.' ...the declared type of
+> the variables should be a supertype... so that the objects assigned to those variables can
+> be of any concrete implementation." — Ch1, p50
+
+Its tiny example makes it stick. Programming to an *implementation*:
+
+```js
+const d = new Dog();   // locked to Dog
+d.bark();
+```
+
+Programming to an *interface/supertype*, with the concrete type assigned at runtime:
+
+```js
+const animal = getAnimal();  // could be any Animal
+animal.makeSound();          // we only care that it CAN makeSound()
+```
+
+`Duck` will hold its behaviors as the **interface types** `FlyBehavior` and `QuackBehavior`,
+so the actual flying/quacking code is never locked into the duck.
+
+## Delegation: the duck asks its behavior to act
+
+Now wire it. `Duck` gets two instance variables typed to the interfaces, and the old
+`fly()`/`quack()` become `performFly()`/`performQuack()` that **delegate**:
+
+```js
+class Duck {
+  // flyBehavior and quackBehavior are set by each concrete duck
+  performQuack() { this.quackBehavior.quack(); }  // delegate, don't do it yourself
+  performFly()   { this.flyBehavior.fly(); }
+}
+
+class MallardDuck extends Duck {
+  constructor() {
+    super();
+    this.quackBehavior = new Quack();        // a real quack
+    this.flyBehavior   = new FlyWithWings();  // it flies
+  }
+}
+```
+
+> "A Duck will now **delegate** its flying and quacking behaviors, instead of using quacking
+> and flying methods defined in the Duck class." — Ch1, p53
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant D as mallard : Duck
+  participant Q as quackBehavior : Quack
+  C->>D: performQuack()
+  D->>Q: quack()
+  Q-->>D: "Quack"
+  Note over D,Q: Duck doesn't know WHICH<br/>quack — only that it can quack()
+```
+
+## The payoff: change behavior at runtime
+
+Because the behavior is an object the duck *holds* (not code it *is*), you can swap it while
+the program runs. Add setters and a rocket:
+
+```js
+setFlyBehavior(fb) { this.flyBehavior = fb; }
+// ...
+const model = new ModelDuck();
+model.performFly();                          // "I can't fly" (FlyNoWay)
+model.setFlyBehavior(new FlyRocketPowered());
+model.performFly();                          // "I'm flying with a rocket!"
+```
+
+> "If it worked, the model duck dynamically changed its flying behavior! You can't do THAT
+> if the implementation lives inside the Duck class." — Ch1, p59
+
+## Principle 3: favor composition over inheritance
+
+Each duck now **HAS-A** `FlyBehavior` and **HAS-A** `QuackBehavior` instead of getting
+those behaviors by **IS-A** inheritance.
+
+> "Favor composition over inheritance." — Ch1, p61 (Design Principle 3)
+
+> "Instead of inheriting their behavior, the ducks get their behavior by being composed with
+> the right behavior object." — Ch1, p61
+
+HAS-A is why the duck call from a hunting-supply company can reuse `Quack` without being a
+`Duck` at all — it just composes itself with a `QuackBehavior`. IS-A could never do that.
+
+## Speaking of design patterns…
+
+> "Congratulations on your first pattern! You just applied... the **Strategy Pattern.**"
+> — Ch1, p62
+
+Here's the formal definition. Read it now that you've built the thing it describes:
+
+> "**The Strategy Pattern** defines a family of algorithms, encapsulates each one, and makes
+> them interchangeable. Strategy lets the algorithm vary independently from clients that use
+> it." — Ch1, p62
+
+Map it back: the **family of algorithms** is `FlyWithWings`/`FlyNoWay` (and the quack
+family); **encapsulated** means each lives in its own class; **interchangeable** is the
+runtime swap; and the **client** (`Duck`) varies independently because it only ever talks to
+the `FlyBehavior` interface. The book even reframes the behaviors as "a family of
+algorithms" precisely so you'd see that *computing state sales tax by state* would use the
+exact same shape (p60).
+
+## The challenge ahead: same shape, no ducks
+
+You'll build a ride-hailing **fare system** — the SimUDuck design with the serial numbers
+filed off. `economyPricing`, `premiumPricing`, `sharedPricing` are your `FlyBehavior`
+family (each encapsulates one fare algorithm behind a `{ base, perKm, adjust }` interface);
+`calculateFare(trip, pricing)` is the client that's programmed to that interface. A tiny
+`pricingFor(type)` lookup answers "who picks the strategy from the API string?" — that's a
+**Simple Factory**, and it's the bridge into the next lesson, where factories get their own
+deep dive (PizzaStore, Factory Method, Abstract Factory). Surge pricing is applied **once**,
+in the calculator — not copy-pasted into each strategy, which is exactly the duplication
+Strategy exists to kill.
