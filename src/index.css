@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-zinc-950 text-zinc-200 antialiased;
+}
+
+::selection {
+  background: rgba(52, 211, 153, 0.25);
+}
+
+/* slim scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 transparent;
+}
+
+/* ---- markdown prose ---- */
+.prose-doc {
+  @apply text-[15px] leading-7 text-zinc-300;
+}
+.prose-doc h1 {
+  @apply text-2xl font-bold text-zinc-50 mt-8 mb-4 tracking-tight;
+}
+.prose-doc h2 {
+  @apply text-xl font-bold text-zinc-50 mt-8 mb-3 tracking-tight;
+}
+.prose-doc h3 {
+  @apply text-base font-semibold text-zinc-100 mt-6 mb-2;
+}
+.prose-doc p {
+  @apply my-3;
+}
+.prose-doc a {
+  @apply text-emerald-400 underline underline-offset-2 hover:text-emerald-300;
+}
+.prose-doc strong {
+  @apply text-zinc-100 font-semibold;
+}
+.prose-doc ul {
+  @apply list-disc pl-6 my-3 space-y-1.5;
+}
+.prose-doc ol {
+  @apply list-decimal pl-6 my-3 space-y-1.5;
+}
+.prose-doc blockquote {
+  @apply border-l-2 border-emerald-500/60 bg-emerald-500/5 pl-4 pr-3 py-2 my-4 rounded-r-md text-zinc-300 not-italic;
+}
+.prose-doc blockquote p {
+  @apply my-1;
+}
+.prose-doc code {
+  @apply font-mono text-[13px] text-emerald-300 bg-zinc-800/80 px-1.5 py-0.5 rounded;
+}
+.prose-doc pre {
+  @apply bg-zinc-900 border border-zinc-800 rounded-lg p-4 my-4 overflow-x-auto;
+}
+.prose-doc pre code {
+  @apply bg-transparent p-0 text-[13px] leading-6 text-zinc-200;
+}
+.prose-doc table {
+  @apply w-full my-4 text-sm border-collapse;
+}
+.prose-doc th {
+  @apply text-left font-semibold text-zinc-100 border-b border-zinc-700 px-3 py-2;
+}
+.prose-doc td {
+  @apply border-b border-zinc-800 px-3 py-2 align-top;
+}
+.prose-doc hr {
+  @apply border-zinc-800 my-8;
+}
+.prose-doc .mermaid-figure {
+  @apply bg-zinc-900/40 border border-zinc-800 rounded-lg p-4 my-5 overflow-x-auto flex justify-center;
+}
+.prose-doc .mermaid {
+  @apply leading-normal;
+}
+.prose-doc .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+/* mermaid injects an empty error <text> for diagrams that haven't run yet; hide pre-hydration flicker */
+.prose-doc .mermaid:not([data-processed]) {
+  @apply text-zinc-600 text-[13px] font-mono;
+}
