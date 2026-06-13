@@ -79,3 +79,19 @@ won't catch this — it's a content-quality requirement you must self-check.
 - **code** — only where the topic has real numeric work the JS sandbox can run
   (e.g. percentiles, arithmetic intensity / roofline, KV-cache memory, batch-size math).
   Skip forced code on purely conceptual chapters.
+
+## What fits which step (for a research paper)
+
+- **read** — motivation (the gap in prior work, from Abstract + Introduction), the
+  core approach/architecture (with diagrams reproducing the paper's key figure),
+  and results framed as "what this buys you and what it costs". See
+  [paper-workflow.md](paper-workflow.md).
+- **quiz** — comprehension of the core mechanism ("why does X work") and
+  terminology the paper introduces — only once taught in a `read` step.
+- **scenario** — adopt/reject case studies built from the paper's limitations,
+  threats-to-validity, or comparison-to-prior-work discussion: "you're choosing
+  between X and Y for system Z — which fits, and why?"
+- **code** — only where the paper states a clean, reproducible numeric
+  relationship (a complexity formula, a speedup/memory-savings ratio, a derived
+  metric). Most evaluation sections are empirical curves with no closed form —
+  skip `code` for those.
