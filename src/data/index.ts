@@ -10,6 +10,7 @@ import { inferenceEngineering } from './inference-engineering'
 import { appliedProbability } from './applied-probability'
 import { systemDesignInterview } from './system-design-interview'
 import { codeAsAgentHarness } from './code-as-agent-harness'
+import { clawvm } from './clawvm'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -25,6 +26,6 @@ export const SUBJECTS: Subject[] = [
 ]
 
 /** Research papers, onboarded the same way as books but surfaced in their own section. */
-export const PAPERS: Subject[] = [codeAsAgentHarness]
+export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm]
 
 export const ALL_SUBJECTS: Subject[] = [...SUBJECTS, ...PAPERS]
