@@ -8,6 +8,8 @@ import decoratorMd from './md/dp-decorator.md?raw'
 import singletonMd from './md/dp-singleton.md?raw'
 import adapterMd from './md/dp-adapter.md?raw'
 import facadeMd from './md/dp-facade.md?raw'
+import commandMd from './md/dp-command.md?raw'
+import templateMethodMd from './md/dp-template-method.md?raw'
 
 export const patterns: Subject = {
   id: 'patterns',
@@ -2073,5 +2075,773 @@ test('watchMovie(movie) passes the movie title through to player.play()', () => 
         },
       ],
     },
+    {
+  id: 'dp-m8',
+  title: 'Command: Decoupling Invoker from Receiver',
+  description: 'The home automation remote can\'t know every vendor\'s API, so the chapter wraps each request as an object — execute(), undo(), and eventually whole macros of them — so the invoker never has to know who\'s actually doing the work.',
+  lessons: [
+    {
+      id: 'dp-command',
+      title: 'Command: requests as objects, undo, and macros',
+      minutes: 28,
+      xp: 130,
+      steps: [
+        { kind: 'read', title: 'The Diner, the Remote Control, undo, and Macro Commands', markdown: commandMd },
+        {
+          kind: 'code',
+          title: 'Build the RemoteControl invoker with undo and macros',
+          challenge: {
+            prompt: `## Command Pattern: the RemoteControl
+
+Build the remote control invoker from the chapter, plus the undo-stack upgrade the Q&A describes (p266: "you keep a stack of previous commands... pop the first item off the stack and call its undo() method").
+
+**1. \`Command\` shape.** Every command is a plain object with an \`execute()\` method and an \`undo()\` method. You'll be given a couple of ready-made commands (\`LightOnCommand\`, \`LightOffCommand\`) to test against — build the invoker and \`MacroCommand\` around them.
+
+**2. \`RemoteControl\` class:**
+   - \`constructor(slotCount)\` — creates \`slotCount\` slots, each pre-loaded with a \`NoCommand\` (a Null Object whose \`execute()\` and \`undo()\` both do nothing — p214's "implement a command that does nothing").
+   - \`setCommand(slot, command)\` — stores a command in a slot.
+   - \`pressButton(slot)\` — calls \`execute()\` on the command in that slot, then PUSHES that command onto an internal undo history (an array used as a stack).
+   - \`pressUndoButton()\` — POPS the most recently pushed command off the undo history and calls its \`undo()\`. If the history is empty, it's a no-op (don't throw).
+
+**3. \`MacroCommand\` class:**
+   - \`constructor(commands)\` — takes an array of Command objects.
+   - \`execute()\` — calls \`execute()\` on each command, IN ORDER.
+   - \`undo()\` — calls \`undo()\` on each command, in REVERSE order (p274's exercise solution: unwind a stack, don't replay it forwards).
+
+A \`MacroCommand\` must itself satisfy the Command shape (it has \`execute()\`/\`undo()\`), so it can be loaded into a \`RemoteControl\` slot exactly like any other command — that's the Meta Command Pattern.
+
+**The point the tests check:** pressing a button runs the right receiver action; multiple undo presses unwind history in LIFO order; an empty slot's button press is a safe no-op; a macro command's undo reverses its own list in reverse order, even when that macro is sitting in a remote slot.`,
+            starterCode: `class NoCommand {
+  execute() {}
+  undo() {}
+}
+
+class RemoteControl {
+  constructor(slotCount) {
+    this.slots = new Array(slotCount).fill(null).map(() => new NoCommand());
+    // TODO: set up the undo history (a stack)
+  }
+
+  setCommand(slot, command) {
+    this.slots[slot] = command;
+  }
+
+  pressButton(slot) {
+    // TODO: execute the command in this slot, then push it onto undo history
+    this.slots[slot].execute();
+  }
+
+  pressUndoButton() {
+    // TODO: pop the most recent command off undo history and call undo() on it
+    // TODO: must be a safe no-op when history is empty
+  }
+}
+
+class MacroCommand {
+  constructor(commands) {
+    this.commands = commands;
+  }
+
+  execute() {
+    for (const command of this.commands) {
+      command.execute();
+    }
+  }
+
+  undo() {
+    // TODO: undo each command in REVERSE order
+    for (const command of this.commands) {
+      command.undo();
+    }
+  }
+}`,
+            solution: `class NoCommand {
+  execute() {}
+  undo() {}
+}
+
+class RemoteControl {
+  constructor(slotCount) {
+    this.slots = new Array(slotCount).fill(null).map(() => new NoCommand());
+    this.undoHistory = [];
+  }
+
+  setCommand(slot, command) {
+    this.slots[slot] = command;
+  }
+
+  pressButton(slot) {
+    const command = this.slots[slot];
+    command.execute();
+    this.undoHistory.push(command);
+  }
+
+  pressUndoButton() {
+    if (this.undoHistory.length === 0) return;
+    const command = this.undoHistory.pop();
+    command.undo();
+  }
+}
+
+class MacroCommand {
+  constructor(commands) {
+    this.commands = commands;
+  }
+
+  execute() {
+    for (const command of this.commands) {
+      command.execute();
+    }
+  }
+
+  undo() {
+    for (let i = this.commands.length - 1; i >= 0; i--) {
+      this.commands[i].undo();
+    }
+  }
+}`,
+            tests: `class Light {
+  constructor() { this.on_ = false; }
+  on() { this.on_ = true; }
+  off() { this.on_ = false; }
+}
+class LightOnCommand {
+  constructor(light) { this.light = light; }
+  execute() { this.light.on(); }
+  undo() { this.light.off(); }
+}
+class LightOffCommand {
+  constructor(light) { this.light = light; }
+  execute() { this.light.off(); }
+  undo() { this.light.on(); }
+}
+
+test('pressButton calls execute() on the receiver', () => {
+  const light = new Light();
+  const remote = new RemoteControl(7);
+  remote.setCommand(0, new LightOnCommand(light));
+  remote.pressButton(0);
+  assertEqual(light.on_, true);
+});
+
+test('an unassigned slot is a safe no-op (NoCommand)', () => {
+  const remote = new RemoteControl(7);
+  let threw = false;
+  try { remote.pressButton(3); } catch { threw = true; }
+  assertEqual(threw, false);
+});
+
+test('pressUndoButton reverses the last pressed command', () => {
+  const light = new Light();
+  const remote = new RemoteControl(7);
+  remote.setCommand(0, new LightOnCommand(light));
+  remote.pressButton(0);
+  remote.pressUndoButton();
+  assertEqual(light.on_, false);
+});
+
+test('undo history is LIFO across multiple slots', () => {
+  const light = new Light();
+  const remote = new RemoteControl(7);
+  remote.setCommand(0, new LightOnCommand(light));
+  remote.setCommand(1, new LightOffCommand(light));
+  remote.pressButton(0); // light on
+  remote.pressButton(1); // light off
+  remote.pressUndoButton(); // undoes slot 1's off -> light back on
+  assertEqual(light.on_, true);
+  remote.pressUndoButton(); // undoes slot 0's on -> light off
+  assertEqual(light.on_, false);
+});
+
+test('pressUndoButton on empty history is a no-op, does not throw', () => {
+  const remote = new RemoteControl(7);
+  let threw = false;
+  try { remote.pressUndoButton(); } catch { threw = true; }
+  assertEqual(threw, false);
+});
+
+test('MacroCommand.execute() runs all commands in order', () => {
+  const light1 = new Light();
+  const light2 = new Light();
+  const macro = new MacroCommand([new LightOnCommand(light1), new LightOnCommand(light2)]);
+  macro.execute();
+  assertEqual(light1.on_, true);
+  assertEqual(light2.on_, true);
+});
+
+test('MacroCommand.undo() reverses all commands in REVERSE order', () => {
+  const light = new Light();
+  // First command turns on, second turns off -- final state after execute() is off.
+  const macro = new MacroCommand([new LightOnCommand(light), new LightOffCommand(light)]);
+  macro.execute();
+  assertEqual(light.on_, false);
+  macro.undo();
+  // undo order: LightOffCommand.undo() first (-> on), then LightOnCommand.undo() (-> off)
+  assertEqual(light.on_, false);
+});
+
+test('a MacroCommand can be loaded into a remote slot like any other command', () => {
+  const light1 = new Light();
+  const light2 = new Light();
+  const remote = new RemoteControl(7);
+  const macro = new MacroCommand([new LightOnCommand(light1), new LightOnCommand(light2)]);
+  remote.setCommand(0, macro);
+  remote.pressButton(0);
+  assertEqual(light1.on_, true);
+  assertEqual(light2.on_, true);
+  remote.pressUndoButton();
+  assertEqual(light1.on_, false);
+  assertEqual(light2.on_, false);
+});`,
+          },
+        },
+        {
+          kind: 'quiz',
+          title: 'Order Slips, Null Objects, undo state, and Command vs Strategy',
+          questions: [
+            {
+              prompt:
+                'In the diner analogy that introduces the pattern, what specifically does the Order Slip do to keep the Waitress and the Short-Order Cook decoupled?',
+              options: [
+                'It has all the recipes hard-coded into the Waitress class, and the Order Slip just carries a customer name',
+                'It exposes only one method (orderUp()) and holds a reference to the receiver, so the Waitress just calls that one method without knowing what food it makes or who actually makes it',
+                'It forces the Customer to talk directly to the Short-Order Cook, bypassing the Waitress entirely',
+                'It stores the recipe as a string the Cook has to parse and interpret at order time',
+              ],
+              answer: 1,
+              explanation:
+                'p237: "[the Order Slip] has an interface that consists of only one method, orderUp(), that encapsulates the actions needed to prepare the meal. It also has a reference to the object that needs to prepare it... the Waitress and the Cook are totally decoupled."',
+            },
+            {
+              prompt:
+                'Why does RemoteControl pre-fill every unassigned slot with a NoCommand object instead of leaving it null and checking for null on every button press?',
+              options: [
+                'NoCommand runs faster than a null check because the JVM optimizes virtual calls better than branches',
+                'It removes the responsibility for handling null from the client code — every slot always holds something with an execute() method, even if that something does nothing; this is the Null Object pattern',
+                'Null is not allowed as an array element value in this design',
+                'NoCommand actually logs an error message so engineers notice unconfigured slots',
+              ],
+              answer: 1,
+              explanation:
+                'p214: "We did sneak a little something in there... So, how do we get around that? Implement a command that does nothing! ...A null object is useful when you don\'t have a meaningful object to return, and yet you want to remove the responsibility for handling null from the client."',
+            },
+            {
+              prompt:
+                'Why does CeilingFanHighCommand need to store prevSpeed as instance state, when LightOnCommand\'s undo() just calls light.off() with no stored state at all?',
+              options: [
+                'CeilingFanHighCommand is buggy and should be refactored to not need state, exactly like LightOnCommand',
+                'Light only has two states (on/off), so "undo" is always the single opposite action; CeilingFan has multiple speeds, so undoing "set to HIGH" might mean going back to MEDIUM, LOW, or OFF depending on what it was before — that has to be captured at execute()-time to be restored later',
+                'Because CeilingFan is a multi-threaded class and Light is not',
+                'Java requires instance fields for any class implementing more than one interface method',
+              ],
+              answer: 1,
+              explanation:
+                'p259: "Hmm, so to properly implement undo, I\'d have to take the previous speed of the ceiling fan into account..." Undo is only "free" when there are exactly two states; otherwise the command must snapshot prior state in execute() so undo() has something to restore.',
+            },
+            {
+              prompt:
+                'The chapter\'s own Q&A asks how to support pressing undo multiple times in a row, not just once. What\'s the fix it describes?',
+              options: [
+                'Add a second undoCommand field so you can undo the last two button presses only',
+                'Keep a stack of previously executed commands instead of a single "last command" field; each undo press pops the most recent command off the stack and calls undo() on it',
+                'Re-run the entire RemoteLoader test script in reverse from the start',
+                'Store the undo history in the Receiver class instead of the Invoker',
+              ],
+              answer: 1,
+              explanation:
+                'p266 Q&A: "instead of keeping just a reference to the last Command executed, you keep a stack of previous commands. Then, whenever undo is pressed, your invoker pops the first item off the stack and calls its undo() method." This is exactly the LIFO undo history built in the code challenge.',
+            },
+            {
+              prompt:
+                'When the chapter\'s exercise asks you to implement MacroCommand.undo() for a macro that ran lightOn, stereoOn, tvOn, hottubOn in that order, what order should undo() call each command\'s undo() in, and why?',
+              options: [
+                'The same forward order (lightOn, stereoOn, tvOn, hottubOn) — order never matters for undo',
+                'Reverse order (hottubOn, tvOn, stereoOn, lightOn) — undo unwinds what execute() built up, like popping a stack, so the last thing turned on is the first thing reversed',
+                'Alphabetical order by command class name, for consistency',
+                'Random order — MacroCommand.undo() is non-deterministic by design',
+              ],
+              answer: 1,
+              explanation:
+                'p274 exercise solution: "public void undo() { for (int i = commands.length - 1; i >= 0; i--) { commands[i].undo(); } }" — undo walks the list backwards, the same unwind-a-stack logic as the remote\'s own undo history.',
+            },
+            {
+              prompt:
+                'Both Strategy and Command wrap behavior inside an object behind a single abstract method, and both let a client swap that object at runtime. What actually distinguishes them?',
+              options: [
+                'Strategy objects must be stateless; Command objects must hold state — that is the only real difference',
+                'Strategy swaps which algorithm runs at one fixed call site, chosen by the client up front (e.g. which compression algorithm); Command decouples who makes a request from who carries it out, specifically so the request itself can be stored, queued, logged, or undone later — the remote stores an Order Slip it can replay or reverse, not just "one of several ways to do a job"',
+                'Strategy is only usable with inheritance; Command only works with composition',
+                'There is no real difference — Command is just Strategy applied to UI button presses',
+              ],
+              answer: 1,
+              explanation:
+                'Strategy answers "which algorithm should run here, right now" — the call site never changes. Command answers "who is asking, versus who will eventually act" — and exists because the request itself needs to be a first-class object you can hand off, queue, log, or undo, as the remote\'s Order Slip / undo stack / job-queue uses in this chapter all demonstrate.',
+            },
+            {
+              prompt:
+                'According to the chapter\'s Q&A, what do you give up if you write a "smart" Command that implements all its own logic instead of delegating to a separate Receiver object?',
+              options: [
+                'Nothing — smart commands are strictly better and the chapter recommends always using them',
+                'The same level of decoupling between invoker and receiver, and the ability to parameterize the same command class with different receivers',
+                'The ability to call execute() at all, since smart commands cannot implement the Command interface',
+                'Thread safety — only smart commands have race conditions',
+              ],
+              answer: 1,
+              explanation:
+                'p266 Q&A: "...there are many examples of \'smart\' command objects that implement most, if not all, of the logic needed to carry out a request. Certainly you can do this; just keep in mind you\'ll no longer have the same level of decoupling between the invoker and receiver, nor will you be able to parameterize your commands with receivers."',
+            },
+          ],
+        },
+        {
+          kind: 'scenario',
+          title: 'Where does Command actually fit?',
+          scenario: {
+            intro:
+              'Your team has the remote control API working — on/off, undo, party-mode macros. Now three unrelated feature requests land, each pitched as "let\'s just use Command for this." Decide whether Command is the right tool for each, using the decoupling-plus-undo/queue/log argument the chapter actually makes.',
+            stages: [
+              {
+                situation:
+                  'A teammate wants a "redo" feature: after pressing undo, a redo button should re-apply whatever was just undone. They propose: "Let\'s just call execute() again on the same command object."',
+                question: 'Is this the right way to extend the pattern as built?',
+                options: [
+                  {
+                    label:
+                      'Mostly yes — since each command already supports execute() (do) and undo() (reverse), redo is just "execute() again" on the command most recently undone. The remote needs a second small stack (a redo stack) that receives commands popped off the undo stack, and pressing redo pops from THAT stack and calls execute() again, pushing it back onto the undo stack.',
+                    quality: 'best',
+                    feedback:
+                      'This follows directly from the chapter\'s own undo-stack answer (p266): if undo is "pop and call undo()", redo is the symmetric "pop from a second stack and call execute() again" — no new pattern needed, just a second stack.',
+                  },
+                  {
+                    label:
+                      'Yes — just call execute() again on the same command object referenced by undoCommand, with no extra stack needed.',
+                    quality: 'ok',
+                    feedback:
+                      'Works for the single-undo version of the remote, but breaks the moment you support multiple consecutive undos (the chapter\'s own Q&A upgrade): without a second stack, you lose track of which commands were undone and in what order, so redo can\'t replay them correctly.',
+                  },
+                  {
+                    label:
+                      'No — redo needs an entirely new pattern; Command can\'t support it because execute() should only ever be called once per command object.',
+                    quality: 'bad',
+                    feedback:
+                      'Nothing in the Command interface forbids calling execute() more than once — the chapter\'s own commands are stateless about "how many times called." Rejecting Command here misreads what the pattern actually constrains.',
+                  },
+                ],
+              },
+              {
+                situation:
+                  'Separately, someone wants to add audit logging: every time any button on the remote is pressed, write a line to a log file recording what happened, for compliance review.',
+                question:
+                  "Does the chapter's own discussion of logging (p268) support reusing Command objects for this, and how?",
+                options: [
+                  {
+                    label:
+                      'Yes — because a Command already packages "a receiver plus a set of actions" as one ordinary object, it can be serialized/stored to disk as each command executes (store()/load() per the chapter), giving you both the audit trail AND, as a side effect, the ability to replay the log to recover state after a crash.',
+                    quality: 'best',
+                    feedback:
+                      'p268: "As we execute commands, we store a history of them on disk... store() and load()." The exact mechanism the chapter describes for crash recovery doubles as an audit log, because the command object already is the complete record of "what happened."',
+                  },
+                  {
+                    label:
+                      'Yes, but only if every command is rewritten to print its own log line inside execute() — there\'s no other way to get this with Command.',
+                    quality: 'ok',
+                    feedback:
+                      'This would work but throws away the actual mechanism the chapter proposes (store()/load() on the Command interface itself) in favor of reinventing ad hoc logging inside every concrete command — more code, less reuse.',
+                  },
+                  {
+                    label:
+                      'No — Command has nothing to do with logging; that would require switching to the Observer pattern instead.',
+                    quality: 'bad',
+                    feedback:
+                      'The chapter explicitly extends Command for this exact use case (p268: "More uses of the Command Pattern: logging requests") — logging is presented as a natural extension, not a different pattern.',
+                  },
+                ],
+              },
+              {
+                situation:
+                  'Finally, a junior engineer suggests replacing the remote\'s seven Command slots with seven Strategy objects instead, arguing "they\'re basically the same thing, and Strategy sounds simpler."',
+                question: 'Should the team make this swap?',
+                options: [
+                  {
+                    label:
+                      'No — the remote needs to store, swap, undo, and macro-compose requests over time (slots get reloaded, undo reverses past presses, MacroCommand runs several at once); Strategy has no undo/queue/log story because it answers a different question ("which algorithm runs at this one call site right now"), not "what happened, and can it be reversed or replayed later."',
+                    quality: 'best',
+                    feedback:
+                      'Exactly the Command-vs-Strategy distinction: Strategy swaps the algorithm at a fixed call site; Command exists because the request itself needs to be a storable, undoable, composable object — which is the entire reason the remote needs undo history and MacroCommand in the first place.',
+                  },
+                  {
+                    label:
+                      'Yes — both patterns wrap behavior behind one method, so the swap is purely cosmetic and changes nothing about how the remote behaves.',
+                    quality: 'bad',
+                    feedback:
+                      'The shapes look similar but the swap would silently lose undo and macro support, since Strategy was never designed to be stored, stacked, or reversed — it answers a different question entirely.',
+                  },
+                  {
+                    label:
+                      'Only partially — keep Command for the on/off slots but use Strategy for the undo button\'s behavior.',
+                    quality: 'ok',
+                    feedback:
+                      'This half-measure doesn\'t address the actual problem: undo doesn\'t need "a different algorithm for undoing," it needs the already-executed Command object\'s own undo() method — introducing Strategy here adds a pattern without solving anything Command doesn\'t already solve.',
+                  },
+                ],
+              },
+            ],
+            debrief:
+              'Command earns its place whenever a request needs to outlive the moment it was made — stored in a slot, reversed by an undo stack, replayed from a redo stack, serialized to a log for crash recovery, or bundled into a macro that runs several requests as one. Strategy solves a narrower problem: which interchangeable algorithm runs at one fixed call site, decided by the client up front, with no expectation that the choice will be queued, logged, or undone. When you catch yourself asking "what happened, and can I take it back or replay it?" — that question only makes sense for Command.',
+          },
+        },
+      ],
+    },
+  ],
+},
+    {
+  id: 'dp-m9',
+  title: "Template Method: The Algorithm's Skeleton",
+  description: 'Coffee and tea recipes are the same algorithm wearing different clothes — Template Method pulls the shared skeleton into a superclass and lets subclasses fill in only the steps that differ, governed by the Hollywood Principle.',
+  lessons: [
+    {
+      id: 'dp-template-method',
+      title: 'Template Method: fixed skeleton, swappable steps',
+      minutes: 28,
+      xp: 130,
+      steps: [
+        { kind: 'read', title: 'CaffeineBeverage, the Hollywood Principle, and three kinds of method', markdown: templateMethodMd },
+        {
+          kind: 'code',
+          title: 'Build CaffeineBeverageWithHook',
+          challenge: {
+            prompt: `## Template Method: CaffeineBeverageWithHook
+
+Build the chapter's \`CaffeineBeverageWithHook\` abstract base class (translated to JS) and a \`CoffeeWithHook\` subclass, matching p332-333.
+
+**1. \`CaffeineBeverageWithHook\` base class**, with:
+- \`prepareRecipe()\` — the **template method**. Calls, in this exact order, and returns an array of the strings each step "outputs" (instead of printing): \`boilWater()\`, \`brew()\`, \`pourInCup()\`, and — only if \`customerWantsCondiments()\` returns true — \`addCondiments()\`.
+- \`boilWater()\` — concrete method, shared by all beverages. Returns \`'Boiling water'\`.
+- \`pourInCup()\` — concrete method, shared by all beverages. Returns \`'Pouring into cup'\`.
+- \`brew()\` — **abstract**: throw an Error if called directly on the base class (subclasses must override it).
+- \`addCondiments()\` — **abstract**: same as \`brew()\`, throw if not overridden.
+- \`customerWantsCondiments()\` — the **hook**. Default implementation returns \`true\` and does nothing else. Subclasses MAY override it; if they don't, condiments are always added.
+
+**2. \`CoffeeWithHook extends CaffeineBeverageWithHook\`**:
+- \`brew()\` returns \`'Dripping Coffee through filter'\`.
+- \`addCondiments()\` returns \`'Adding Sugar and Milk'\`.
+- Overrides \`customerWantsCondiments()\` to return whatever boolean was passed into its constructor (so tests can simulate "customer said no").
+
+**The point the tests check:** the algorithm's step ORDER never changes; \`addCondiments()\` is skipped entirely when the hook returns false; and calling \`brew()\`/\`addCondiments()\` on the base class directly (without subclassing) throws, because those are abstract.`,
+            starterCode: `class CaffeineBeverageWithHook {
+  prepareRecipe() {
+    const steps = [];
+    steps.push(this.boilWater());
+    steps.push(this.brew());
+    steps.push(this.pourInCup());
+    // TODO: only push addCondiments() if customerWantsCondiments() is true
+    steps.push(this.addCondiments());
+    return steps;
+  }
+
+  boilWater() {
+    return 'Boiling water';
+  }
+
+  pourInCup() {
+    return 'Pouring into cup';
+  }
+
+  brew() {
+    // TODO: this is abstract — base class must throw if not overridden
+  }
+
+  addCondiments() {
+    // TODO: this is abstract — base class must throw if not overridden
+  }
+
+  customerWantsCondiments() {
+    // TODO: this is a hook — default to true
+    return false;
+  }
+}
+
+class CoffeeWithHook extends CaffeineBeverageWithHook {
+  constructor(wantsCondiments = true) {
+    super();
+    this.wantsCondiments = wantsCondiments;
+  }
+
+  brew() {
+    return 'Dripping Coffee through filter';
+  }
+
+  addCondiments() {
+    return 'Adding Sugar and Milk';
+  }
+
+  // TODO: override customerWantsCondiments() to return this.wantsCondiments
+}`,
+            solution: `class CaffeineBeverageWithHook {
+  prepareRecipe() {
+    const steps = [];
+    steps.push(this.boilWater());
+    steps.push(this.brew());
+    steps.push(this.pourInCup());
+    if (this.customerWantsCondiments()) {
+      steps.push(this.addCondiments());
+    }
+    return steps;
+  }
+
+  boilWater() {
+    return 'Boiling water';
+  }
+
+  pourInCup() {
+    return 'Pouring into cup';
+  }
+
+  brew() {
+    throw new Error('brew() is abstract — subclasses must implement it');
+  }
+
+  addCondiments() {
+    throw new Error('addCondiments() is abstract — subclasses must implement it');
+  }
+
+  customerWantsCondiments() {
+    return true;
+  }
+}
+
+class CoffeeWithHook extends CaffeineBeverageWithHook {
+  constructor(wantsCondiments = true) {
+    super();
+    this.wantsCondiments = wantsCondiments;
+  }
+
+  brew() {
+    return 'Dripping Coffee through filter';
+  }
+
+  addCondiments() {
+    return 'Adding Sugar and Milk';
+  }
+
+  customerWantsCondiments() {
+    return this.wantsCondiments;
+  }
+}`,
+            tests: `test('prepareRecipe() runs steps in the fixed order: boil, brew, pour, condiments', () => {
+  const coffee = new CoffeeWithHook(true);
+  const steps = coffee.prepareRecipe();
+  assertEqual(steps, [
+    'Boiling water',
+    'Dripping Coffee through filter',
+    'Pouring into cup',
+    'Adding Sugar and Milk',
+  ]);
+});
+test('hook returning false skips addCondiments() entirely', () => {
+  const coffee = new CoffeeWithHook(false);
+  const steps = coffee.prepareRecipe();
+  assertEqual(steps, ['Boiling water', 'Dripping Coffee through filter', 'Pouring into cup']);
+});
+test('default hook on the base class returns true', () => {
+  const base = new CaffeineBeverageWithHook();
+  assertEqual(base.customerWantsCondiments(), true);
+});
+test('calling brew() directly on the base class throws (abstract method)', () => {
+  const base = new CaffeineBeverageWithHook();
+  let threw = false;
+  try { base.brew(); } catch { threw = true; }
+  assertEqual(threw, true);
+});
+test('calling addCondiments() directly on the base class throws (abstract method)', () => {
+  const base = new CaffeineBeverageWithHook();
+  let threw = false;
+  try { base.addCondiments(); } catch { threw = true; }
+  assertEqual(threw, true);
+});
+test('boilWater() and pourInCup() are shared concrete methods, identical for every subclass', () => {
+  const coffee = new CoffeeWithHook();
+  assertEqual(coffee.boilWater(), 'Boiling water');
+  assertEqual(coffee.pourInCup(), 'Pouring into cup');
+});
+test('a second CoffeeWithHook instance with a different hook answer is independent', () => {
+  const yes = new CoffeeWithHook(true);
+  const no = new CoffeeWithHook(false);
+  assertEqual(yes.prepareRecipe().length, 4);
+  assertEqual(no.prepareRecipe().length, 3);
+});`,
+          },
+        },
+        {
+          kind: 'quiz',
+          title: 'Abstract methods, hooks, and Template Method vs Strategy',
+          questions: [
+            {
+              prompt:
+                "The chapter's own Q&A (p335) draws the line between an abstract method and a hook on one specific axis. What is it?",
+              options: [
+                'Abstract methods run faster than hooks at runtime',
+                'Use abstract methods when the subclass MUST provide an implementation of that step; use hooks when that part of the algorithm is OPTIONAL — a subclass may override a hook, but doesn\'t have to',
+                'Hooks can only be used in the constructor, abstract methods can be used anywhere',
+                'Abstract methods are for primitive return types, hooks are for objects',
+              ],
+              answer: 1,
+              explanation:
+                'p335: "Use abstract methods when your subclass MUST provide an implementation of the method or step in the algorithm. Use hooks when that part of the algorithm is optional." Necessity vs optionality is the entire distinction.',
+            },
+            {
+              prompt:
+                'In CaffeineBeverageWithHook (p332), why is prepareRecipe() still declared final even though it now contains a conditional (if customerWantsCondiments())?',
+              options: [
+                'final is required on any method containing an if-statement',
+                'The conditional is itself part of the fixed algorithm — the SEQUENCE of steps (boil, brew, pour, maybe-condiments) never changes, only whether one already-defined step runs. Subclasses still can\'t rewrite the recipe\'s structure, so prepareRecipe() stays locked.',
+                'final was a typo carried over from the non-hook version and has no real purpose here',
+                'Because customerWantsCondiments() is abstract, so the method calling it must also be final',
+              ],
+              answer: 1,
+              explanation:
+                'The hook adds a branch, not a new degree of freedom over the algorithm\'s shape — prepareRecipe() still "controls the algorithm. No one can change this" (p327). Hooks let subclasses influence outcomes without ever touching the template method itself.',
+            },
+            {
+              prompt:
+                'The Q&A on Arrays.sort() (p345) asks: "This implementation of sorting actually seems more like the Strategy Pattern... Why do we consider it Template Method?" What is the book\'s answer?',
+              options: [
+                'Because sort() uses inheritance internally, just hidden from the caller',
+                'Because the algorithm Arrays implements for sort() is INCOMPLETE — it needs a class to fill in the missing compareTo() step. Strategy\'s composed object implements the WHOLE algorithm itself; Template Method\'s subclass (or, here, Comparable) only fills in one missing piece of a larger fixed algorithm.',
+                'Because sort() is a static method, and Strategy can never be implemented with static methods',
+                'There is no real difference; the book says either label is equally correct',
+              ],
+              answer: 1,
+              explanation:
+                'p345: "The algorithm that Arrays implements for sort() is incomplete; it needs a class to fill in the missing compareTo() method. So, in that way, it\'s more like Template Method." Strategy delegates the ENTIRE algorithm; Template Method only delegates individual steps.',
+            },
+            {
+              prompt:
+                'Strategy and Template Method both let you vary part of an algorithm. What actually differs between them?',
+              options: [
+                'Strategy is for algorithms with loops, Template Method is for algorithms without loops',
+                'Template Method uses INHERITANCE so a subclass fills in one or more steps of a FIXED algorithm skeleton (the superclass keeps control and calls the shots); Strategy uses COMPOSITION so a client can swap out the ENTIRE algorithm at runtime by handing in a different strategy object',
+                'Template Method can only be used with two steps; Strategy supports any number of steps',
+                'They are interchangeable — any Template Method can be mechanically rewritten as a Strategy with zero design tradeoffs',
+              ],
+              answer: 1,
+              explanation:
+                'Per the fireside chat (p348): Template Method "define[s] the outline of an algorithm, but let[s] my subclasses do some of the work" via inheritance, fixed at compile time. Strategy "offer[s] clients a choice of algorithm implementation through object composition," swappable at runtime — and swaps the whole algorithm, not a step of it.',
+            },
+            {
+              prompt:
+                'A teammate writes a JFrame subclass and overrides paint() to draw a custom border. Per the chapter\'s Java-API safari (p346), what role does paint() play, and what would happen if they left it un-overridden?',
+              options: [
+                'paint() is abstract, so the code would fail to compile if left un-overridden',
+                'paint() is a hook — "by default, paint() does nothing because it\'s a hook!" If left un-overridden, JFrame would simply draw nothing extra; the frame still renders normally, since the hook has a working default (no-op) behavior.',
+                'paint() is a concrete, final method — overriding it is undefined behavior',
+                'paint() is the template method itself, so overriding it would break JFrame\'s entire rendering algorithm',
+              ],
+              answer: 1,
+              explanation:
+                'p346: "By default, paint() does nothing because it\'s a hook! By overriding paint(), you can insert yourself into JFrame\'s algorithm." A hook always has a safe default — that\'s precisely what makes it optional rather than required.',
+            },
+          ],
+        },
+        {
+          kind: 'scenario',
+          title: 'Designing a report-generation framework',
+          scenario: {
+            intro:
+              'Your team is building a shared "report generator" used across five teams: fetch data, transform it, render output, and optionally email it. Each team\'s reports differ in the details, but the overall sequence never changes. Using the chapter\'s abstract-method/hook/Strategy distinctions, decide how to structure each piece.',
+            stages: [
+              {
+                situation:
+                  'Every report MUST define how to fetch its source data — there is no sane default (one team queries Postgres, another reads a CSV, another calls an API). A teammate suggests giving fetchData() a default implementation that returns an empty array, "just so subclasses aren\'t forced to implement it."',
+                question: 'Is that the right call for fetchData()?',
+                options: [
+                  {
+                    label:
+                      'No — this is exactly the abstract-method case from p335: "Use abstract methods when your subclass MUST provide an implementation." Defaulting to empty data hides a missing implementation as silent wrong behavior (a report that quietly has no data) instead of failing loudly. Declare it abstract so every subclass is forced to supply it.',
+                    quality: 'best',
+                    feedback:
+                      'Right — fetchData() has no safe default; a no-op default would make a broken report look like it succeeded with zero rows, the worst kind of silent failure. Make it abstract.',
+                  },
+                  {
+                    label:
+                      'Yes — an empty-array default is harmless and means new report types can be added without immediately implementing every method.',
+                    quality: 'bad',
+                    feedback:
+                      'This is precisely the failure mode the abstract/hook distinction prevents: a report that forgets to implement fetchData() now silently "succeeds" with no data instead of failing to compile/instantiate.',
+                  },
+                  {
+                    label:
+                      'Make it a hook that defaults to throwing an Error reminding the subclass to override it.',
+                    quality: 'ok',
+                    feedback:
+                      'Functionally similar to an abstract method (it forces an override or it breaks), but it\'s simulating "MUST implement" with a hook mechanism instead of just using an abstract method, which is what the book\'s vocabulary already has a name for. Use abstract for "must," hooks for "optional."',
+                  },
+                ],
+              },
+              {
+                situation:
+                  'The optional "email the report when done" step: most teams never want it, but two teams do. A teammate proposes making sendEmail() abstract too, "for consistency with fetchData()."',
+                question: 'Abstract or hook for sendEmail()?',
+                options: [
+                  {
+                    label:
+                      'Hook — default to a no-op (or returning false to skip). This matches customerWantsCondiments() exactly (p332): most beverages skip the optional step, and the ones that want it override the hook. Forcing every team to implement an unwanted email step (even as an empty stub) is needless busywork.',
+                    quality: 'best',
+                    feedback:
+                      'Exactly the hook\'s job: optional steps that most callers skip and a few opt into, without forcing the majority to write empty stub implementations.',
+                  },
+                  {
+                    label:
+                      'Abstract, "for consistency" — every report subclass should look the same shape.',
+                    quality: 'bad',
+                    feedback:
+                      'This punishes the three teams that never want email with mandatory empty-method busywork, exactly the cost the hook avoids. Consistency for its own sake isn\'t a reason to make an optional step mandatory.',
+                  },
+                  {
+                    label:
+                      'Skip the report framework for email entirely — have each team email reports manually outside the template method.',
+                    quality: 'ok',
+                    feedback:
+                      'Works, but throws away the chance to let the email step participate in the same fixed, auditable sequence (fetch→transform→render→maybe-email) the rest of the algorithm gets — manual side calls are easy to forget or order incorrectly.',
+                  },
+                ],
+              },
+              {
+                situation:
+                  'A sixth team shows up with a genuinely different need: they don\'t want to fetch-transform-render-email in that order at all — they want to render FIRST (a live preview), then conditionally fetch fresh data and re-render based on user interaction. The fixed sequence doesn\'t fit their use case.',
+                question:
+                  "Per the chapter's own fireside chat (p348-349), is Template Method still the right tool here?",
+                options: [
+                  {
+                    label:
+                      'No — when the thing that needs to vary is the ALGORITHM\'S STRUCTURE itself (not just individual steps within a fixed order), that\'s outside what Template Method offers. Template Method "lets subclasses redefine certain steps... without changing the algorithm\'s structure" (p329). This team needs a different algorithm shape entirely — give them their own composed pipeline (closer to Strategy, swapping a whole report-building object) rather than forcing them into the report framework\'s fixed step order.',
+                    quality: 'best',
+                    feedback:
+                      'Matches the definition precisely: Template Method protects the algorithm\'s STRUCTURE. A team that needs a different order needs a different algorithm, not a stretched Template Method.',
+                  },
+                  {
+                    label:
+                      'Yes — just add more hooks before and after every step so any order becomes possible.',
+                    quality: 'bad',
+                    feedback:
+                      'Once enough hooks surround every step to permit arbitrary reordering, prepareRecipe()/generateReport() has stopped being a template for ONE algorithm and become a maze of conditionals — the "fixed skeleton" benefit (p329) is gone, replaced by accidental complexity.',
+                  },
+                  {
+                    label:
+                      'Yes — make the entire step order itself an abstract method that subclasses override completely.',
+                    quality: 'bad',
+                    feedback:
+                      'If the override replaces the template method\'s own step order, that final, structure-protecting method no longer exists — at that point you\'ve reinvented Strategy without naming it, and lost the "the algorithm lives in one place" guarantee the pattern exists to provide.',
+                  },
+                ],
+              },
+            ],
+            debrief:
+              'The fetchData()-vs-sendEmail() split mirrors the chapter exactly: abstract methods are for steps with no safe default (a missing implementation should fail loudly), hooks are for steps most callers skip and a few opt into. But Template Method only protects an algorithm\'s STEPS, not its STRUCTURE — once a use case needs a genuinely different step order, that\'s a signal to reach for Strategy (a swappable whole-algorithm object) instead of stretching Template Method with hooks until the fixed skeleton disappears.',
+          },
+        },
+      ],
+    },
+  ],
+}
   ],
 }
