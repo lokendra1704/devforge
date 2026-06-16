@@ -14,6 +14,7 @@ import { clawvm } from './clawvm'
 import { sira } from './sira'
 import { intrinsicDimension } from './intrinsic-dimension'
 import { lora } from './lora'
+import { agenticAiAdaptation } from './agentic-ai-adaptation'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -29,6 +30,6 @@ export const SUBJECTS: Subject[] = [
 ]
 
 /** Research papers, onboarded the same way as books but surfaced in their own section. */
-export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora]
+export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation]
 
 export const ALL_SUBJECTS: Subject[] = [...SUBJECTS, ...PAPERS]
