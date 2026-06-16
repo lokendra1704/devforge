@@ -1,4 +1,4 @@
-import { SUBJECTS, PAPERS, ALL_SUBJECTS } from '../data'
+import { SUBJECTS, PAPERS, WHITEPAPERS, ALL_SUBJECTS } from '../data'
 import { useProgress, levelInfo, levelTitle } from '../lib/progress'
 import { navigate } from '../App'
 
@@ -79,6 +79,19 @@ export function Dashboard() {
             Curated breakdowns of research papers, broken into bite-sized lessons.
           </p>
           <div className="grid sm:grid-cols-2 gap-4">{PAPERS.map((s) => renderSubjectCard(s))}</div>
+        </>
+      )}
+
+      {/* whitepapers grid */}
+      {WHITEPAPERS.length > 0 && (
+        <>
+          <h2 className="mt-10 mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500">
+            Whitepapers
+          </h2>
+          <p className="mt-[-12px] mb-4 text-[13px] text-zinc-500">
+            Industry whitepapers on how AI is reshaping engineering practice, broken into bite-sized lessons.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">{WHITEPAPERS.map((s) => renderSubjectCard(s))}</div>
         </>
       )}
     </div>
