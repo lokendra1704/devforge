@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { SUBJECTS, PAPERS, ALL_SUBJECTS } from './data'
+import { SUBJECTS, PAPERS, WHITEPAPERS, ALL_SUBJECTS } from './data'
 import { useProgress, levelInfo, levelTitle } from './lib/progress'
 import { Dashboard } from './components/Dashboard'
 import { SubjectPage } from './components/SubjectPage'
@@ -93,6 +93,12 @@ export default function App() {
             </div>
           )}
           {PAPERS.map((s) => renderNavItem(s))}
+          {WHITEPAPERS.length > 0 && (
+            <div className="px-5 pt-4 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+              Whitepapers
+            </div>
+          )}
+          {WHITEPAPERS.map((s) => renderNavItem(s))}
         </nav>
 
         {/* player card */}
