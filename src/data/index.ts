@@ -19,6 +19,7 @@ import { agenticAiAdaptation } from './agentic-ai-adaptation'
 import { craftCreativeGeneration } from './craft-creative-generation'
 import { skillOpt } from './skill-opt'
 import { claudeCodeArchitecture } from './claude-code-architecture'
+import { lossLandscapeAnalysis } from './loss-landscape-analysis'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -35,6 +36,6 @@ export const SUBJECTS: Subject[] = [
 ]
 
 /** Research papers, onboarded the same way as books but surfaced in their own section. */
-export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture]
+export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis]
 
 export const ALL_SUBJECTS: Subject[] = [...SUBJECTS, ...PAPERS]
