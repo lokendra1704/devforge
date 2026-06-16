@@ -5,6 +5,7 @@ import { lld } from './lld'
 import { patterns } from './patterns'
 import { agentic } from './agentic'
 import { gpu } from './gpu'
+import { gpuDistributedTraining } from './gpu-distributed-training'
 import { parallelism } from './parallelism'
 import { inferenceEngineering } from './inference-engineering'
 import { appliedProbability } from './applied-probability'
@@ -26,6 +27,7 @@ export const SUBJECTS: Subject[] = [
   patterns,
   agentic,
   gpu,
+  gpuDistributedTraining,
   parallelism,
   inferenceEngineering,
   appliedProbability,
