@@ -12,6 +12,8 @@ import { systemDesignInterview } from './system-design-interview'
 import { codeAsAgentHarness } from './code-as-agent-harness'
 import { clawvm } from './clawvm'
 import { sira } from './sira'
+import { intrinsicDimension } from './intrinsic-dimension'
+import { lora } from './lora'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -27,6 +29,6 @@ export const SUBJECTS: Subject[] = [
 ]
 
 /** Research papers, onboarded the same way as books but surfaced in their own section. */
-export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm, sira]
+export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora]
 
 export const ALL_SUBJECTS: Subject[] = [...SUBJECTS, ...PAPERS]
