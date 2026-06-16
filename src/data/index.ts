@@ -25,6 +25,7 @@ import { monteCarloTreeDiffusion } from './monte-carlo-tree-diffusion'
 import { dta } from './deep-transformers-atlas'
 import { deepQNetworks } from './deep-q-networks'
 import { phoneHarness } from './phone-harness'
+import { perceptron } from './perceptron'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -41,6 +42,6 @@ export const SUBJECTS: Subject[] = [
 ]
 
 /** Research papers, onboarded the same way as books but surfaced in their own section. */
-export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness]
+export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron]
 
 export const ALL_SUBJECTS: Subject[] = [...SUBJECTS, ...PAPERS]
