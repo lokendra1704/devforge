@@ -27,6 +27,7 @@ import { deepQNetworks } from './deep-q-networks'
 import { phoneHarness } from './phone-harness'
 import { perceptron } from './perceptron'
 import { vibeCodingSdlc } from './vibe-coding-sdlc'
+import { reinforcementLearning } from './reinforcement-learning'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -40,6 +41,7 @@ export const SUBJECTS: Subject[] = [
   inferenceEngineering,
   appliedProbability,
   systemDesignInterview,
+  reinforcementLearning,
 ]
 
 /** Research papers, onboarded the same way as books but surfaced in their own section. */
