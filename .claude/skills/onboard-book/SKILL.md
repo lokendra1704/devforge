@@ -79,8 +79,29 @@ edits happen on the new branch, not on `main`.
 
 ### Step 1 — Inspect the structure (no PDF body in context)
 
+**First, get the PDF onto disk.** `slice_pdf.py` reads a **local file** — handing it
+a URL fails with `PDF not found`. If `$ARGUMENTS` is a remote link (e.g. an arXiv
+URL), download it **once** and use the local path for every command from here on
+(outline, sections, slice). Do **not** pass the URL to the script.
+
 ```bash
-python .claude/skills/onboard-book/scripts/slice_pdf.py outline "$ARGUMENTS"
+DOC="$ARGUMENTS"
+if echo "$DOC" | grep -qiE '^https?://'; then
+  PDF="/tmp/onboard-src-$(echo "$DOC" | grep -oE '[0-9]{4}\.[0-9]+' | head -1).pdf"
+  [ "$PDF" = "/tmp/onboard-src-.pdf" ] && PDF="/tmp/onboard-src.pdf"
+  curl -sL "$DOC" -o "$PDF"
+  file "$PDF" | grep -q 'PDF' && echo "Downloaded: $PDF" \
+    || echo "WARNING: not a PDF — arXiv abstract pages need the /pdf/ URL, not /abs/"
+else
+  PDF="$DOC"   # already a local path
+fi
+echo "Local PDF: $PDF"
+```
+
+`$PDF` now holds the local path. Use it (not `$ARGUMENTS`) for the script below:
+
+```bash
+python .claude/skills/onboard-book/scripts/slice_pdf.py outline "$PDF"
 ```
 
 This prints the page count, total token estimate, and the nested outline with
@@ -90,7 +111,7 @@ This prints the page count, total token estimate, and the nested outline with
 - **Book, no outline** — fall back to slicing by fixed page ranges (e.g. every ~25
   pages) and skim the first lines of each slice to find real boundaries.
 - **Paper (empty or very short outline)** — run
-  `python .claude/skills/onboard-book/scripts/slice_pdf.py sections "$ARGUMENTS"`
+  `python .claude/skills/onboard-book/scripts/slice_pdf.py sections "$PDF"`
   for a best-effort list of detected section headings + page numbers, then jump to
   [references/paper-workflow.md](references/paper-workflow.md).
 
@@ -115,7 +136,8 @@ challenges, how to use any glossary/appendix).
 Write slices into a gitignored scratch dir (add `.book-ingest/` to `.gitignore`):
 
 ```bash
-python .claude/skills/onboard-book/scripts/slice_pdf.py slice "$ARGUMENTS" ./.book-ingest \
+# "$PDF" is the local path resolved in Step 1 (download a URL there first).
+python .claude/skills/onboard-book/scripts/slice_pdf.py slice "$PDF" ./.book-ingest \
     ch1:16:39 ch2:40:71 glossary:210:231
 ```
 
@@ -177,13 +199,44 @@ append it to the `SUBJECTS` array.
 
 ```bash
 npm run build            # tsc -b && vite build — type-checks the new subject
-npx vitest run --testTimeout=8000 src/data/curriculum.test.ts   # explicit path on purpose
 ```
 
-Invoke vitest **with the explicit file path** (and `--testTimeout`): a bare `npx
-vitest run` can hang a fork worker at 100% CPU in this repo. If a worker spins,
-kill it with `pkill -9 -f forks.js`. Details:
-`docs/solutions/test-failures/vitest-run-hang-fork-worker-System-20260612.md`.
+Then run the curriculum test. This repo has a **known vitest fork-worker hang**: a
+run can print the `RUN v4.1.8` banner and then spin a `forks.js` worker at 100% CPU
+forever. Follow this recipe exactly — most of the wasted time on past runs came from
+fighting the hang the wrong way:
+
+```bash
+# 1. Reap any orphaned workers FIRST (plain pkill isn't always enough).
+pkill -9 -f forks.js 2>/dev/null; pkill -9 -f vitest 2>/dev/null
+# 2. ONE run, foreground, explicit path + --bail=1 (~600ms, exits cleanly).
+npx vitest run --testTimeout=8000 --bail=1 src/data/curriculum.test.ts
+```
+
+Hard rules — violating these is what makes the hang look unkillable:
+
+- **Run it ONCE, in the foreground.** Do **not** launch a second run while one may
+  still be alive — concurrent runs compete and spawn orphan workers that peg a core
+  and survive `pkill`, so every later run looks dead too.
+- **Don't background it and don't pipe through `tail`.** Backgrounding + `tail`
+  buffering hides output until an EOF that never arrives, making a fast test look
+  hung. Just run it foreground and read the result.
+- **`--bail=1`** stops at the first failure and lets the process exit promptly
+  instead of grinding through every code challenge (where the hang tends to bite).
+
+**If a test fails in a subject you did NOT author** (e.g. a `dsa-…` code challenge),
+it is almost certainly **pre-existing**, and `--bail=1` just stopped there first.
+Confirm it's not yours before debugging:
+
+```bash
+git diff origin/main -- src/data/<that-subject>.ts   # empty diff = pre-existing, not your change
+```
+
+To check only your own subject's lessons compiled into the suite, grep your prefix
+in the run output rather than relying on `-t "<subject-id>"` (the test titles aren't
+keyed by subject id, so `-t` can match nothing and skip everything).
+
+Full details: `docs/solutions/test-failures/vitest-run-hang-fork-worker-System-20260612.md`.
 
 Then `npm run dev` and confirm the new subject appears in the sidebar **and that
 every diagram renders** — mermaid runs client-side, so a broken graph shows a red
@@ -242,8 +295,9 @@ git branch -d $WT_NAME
       references/diagrams.md).
 - [ ] No `visualizer` steps; code/quiz/scenario meet the validation rules.
 - [ ] Subject registered in `src/data/index.ts`.
-- [ ] `npm run build` clean and `npx vitest run … curriculum.test.ts` green for the
-      subject.
+- [ ] `npm run build` clean and `npx vitest run --bail=1 … curriculum.test.ts`
+      green for the subject (any failure is in a subject whose `src/data/*.ts` you
+      did not change — verified via `git diff origin/main`).
 - [ ] **Committed** on the worktree branch, **merged to `main`**, **pushed to
       `origin/main`**, worktree and branch removed.
 
