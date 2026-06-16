@@ -150,7 +150,9 @@ later. For a paper this is often just 1–3 slices total — see
 For each module, `Read` only its slice file, then write:
 - `src/data/md/<prefix>-<topic>.md` for each `read` step (tight, concrete; cite the
   source). **Extract exact passages and trim them to the core claim — don't
-  paraphrase.** See "Quote the source, don't paraphrase" below.
+  paraphrase.** See "Quote the source, don't paraphrase" below. Write the
+  surrounding voice per "Voice: write like *Head First*" below — conversational,
+  visual, one hook per lesson, sparing Q&A callouts for the obvious misconception.
 - The module's lessons in `src/data/<subject-id>.ts`, mixing `read` + `quiz` +
   `scenario`, plus a `code` step where there's genuine numeric work (see schema
   reference).
@@ -293,6 +295,9 @@ git branch -d $WT_NAME
 - [ ] Read steps carry **diagrams** where the source did — right type, anchored to
       the prose, and confirmed rendering in `npm run dev` (see
       references/diagrams.md).
+- [ ] Read steps are written in the *Head First* voice — conversational, a concrete
+      hook before the abstraction, no unbroken walls of prose, sparing Q&A callouts
+      for the obvious misconception (see "Voice: write like Head First").
 - [ ] No `visualizer` steps; code/quiz/scenario meet the validation rules.
 - [ ] Subject registered in `src/data/index.ts`.
 - [ ] `npm run build` clean and `npx vitest run --bail=1 … curriculum.test.ts`
@@ -306,6 +311,56 @@ git branch -d $WT_NAME
 Intuition is understanding *why* something works, not just *what* it is. Readers
 who finish a module should be able to predict behavior, explain trade-offs, and
 apply the concept in new contexts.
+
+### Voice: write like *Head First*
+
+*Head First Design Patterns* opens with its own "How to Use This Book," explaining
+that the brain treats novel, visual, conversational, emotionally-engaging content as
+*important* and skims past flat, linear text. Every subject onboarded with this
+skill — book, paper, or whitepaper — should write `read` steps the same way, not
+just the `patterns` subject. Concretely:
+
+1. **Visual, not linear.** Never run three-plus paragraphs of unbroken prose. Break
+   it up with a table, an analogy, or a diagram (see diagrams.md) placed right where
+   the claim is made.
+2. **Conversational, personalized.** Write *to* the reader ("you"), not about an
+   abstract third party. Prefer direct questions ("Why does the second sentence take
+   longer to compute than the first?") over declarative-only sentences.
+3. **Deeper processing over re-reading.** Open each read step with the problem or a
+   question the reader has to sit with for a second — don't lead with the
+   definition. Make them guess before you answer.
+4. **Novelty and a little emotion.** One concrete, slightly surprising analogy (the
+   "F1 car vs. bus fleet" move in `gpu-why.md`) beats five generic technical
+   sentences. The hook should be memorable, not decorative.
+5. **Multiple learning styles per lesson.** Don't let a whole module be all `read`.
+   Mix `read` (visual/verbal) with `scenario` (situational judgment) and `code`
+   (hands-on) within the same lesson where the content supports it.
+6. **Redundancy across formats, not within one.** State the core idea once in prose,
+   once in a diagram/table, and once more in a quiz `explanation` — three different
+   modes, not the same sentence repeated.
+7. **Answer the question every reader is silently asking.** When a concept has an
+   obvious-but-wrong intuition, address it head-on with a blockquote right after the
+   claim it complicates:
+   ```markdown
+   > **Wait — isn't that just X?** No: X assumes ..., this assumes the opposite.
+   > The difference matters because ...
+   ```
+   Use this once or twice per read step, for the single most common misconception —
+   not a Q&A box after every paragraph.
+8. **80/20 coverage.** Teach what's needed to *use* the idea now, not the exhaustive
+   reference treatment. Cut tangents and historical trivia that don't feed the
+   following quiz/scenario/code step.
+9. **Humor, used sparingly.** A wry aside is fine if it doesn't slow down the actual
+   claim. Never force a joke onto a step that doesn't need one.
+
+*Dry opener (avoid):*
+> The visitor pattern lets you add new operations to existing object structures
+> without modifying their classes.
+
+*Head-First opener (prefer):*
+> Every time marketing asks for "just one more report," you reopen every class in
+> the object tree and add a method. What if you could write the new behavior
+> *once*, somewhere else, and have the objects hand themselves to it instead?
 
 ### Intuition-building principles
 

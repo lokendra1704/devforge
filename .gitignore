@@ -30,3 +30,4 @@ dist-ssr
 .book-ingest/
 .claude/scheduled_tasks.lock
 *.pyc.book-ingest/
+*pyc
