@@ -22,6 +22,8 @@ import { claudeCodeArchitecture } from './claude-code-architecture'
 import { lossLandscapeAnalysis } from './loss-landscape-analysis'
 import { mctsOptions } from './mcts-options'
 import { monteCarloTreeDiffusion } from './monte-carlo-tree-diffusion'
+import { dta } from './deep-transformers-atlas'
+import { deepQNetworks } from './deep-q-networks'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -38,6 +40,6 @@ export const SUBJECTS: Subject[] = [
 ]
 
 /** Research papers, onboarded the same way as books but surfaced in their own section. */
-export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion]
+export const PAPERS: Subject[] = [codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks]
 
 export const ALL_SUBJECTS: Subject[] = [...SUBJECTS, ...PAPERS]
