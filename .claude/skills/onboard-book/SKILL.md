@@ -2,7 +2,7 @@
 name: onboard-book
 description: Onboard a large book or research paper (PDF) into the devforge interview-prep platform as a new subject, token-aware. Use when the user wants to add a subject from a book, paper, or other large PDF, ingest a document into the curriculum, or turn a large document into lessons without loading the whole file into context. Builds Subject/Module/Lesson data following src/types.ts.
 argument-hint: [path/to/document.pdf]
-allowed-tools: Bash, Read, Write, Edit
+allowed-tools: Bash, Read, Write, Edit, EnterWorktree, ExitWorktree
 ---
 
 # Onboard a book or research paper as a new subject
@@ -53,6 +53,29 @@ If unsure which mode applies, run Step 1 first: an empty outline plus a small pa
 count is a strong signal it's a paper.
 
 ## Workflow
+
+### Step 0 — Create an isolated git worktree
+
+Before touching any source files, create a dedicated branch and worktree so all
+authoring is isolated from `main`. Derive the branch name from the document path:
+
+```bash
+DOC="$ARGUMENTS"
+if echo "$DOC" | grep -qE "arxiv\.org/pdf/[0-9]"; then
+  ARXIV_ID=$(echo "$DOC" | grep -oE "[0-9]{4}\.[0-9]+" | head -1)
+  WT_NAME="onboard-paper-${ARXIV_ID}"
+else
+  STEM=$(basename "$DOC" .pdf | tr '[:upper:] _' '[:lower:]-' | tr -cd 'a-z0-9-' | cut -c1-40)
+  WT_NAME="onboard-book-${STEM}"
+fi
+echo "Worktree branch: $WT_NAME"
+```
+
+Then call `EnterWorktree` with `name: $WT_NAME`. The session's working directory
+switches to `.claude/worktrees/$WT_NAME` — all subsequent file reads, writes, and
+edits happen on the new branch, not on `main`.
+
+**Remember `$WT_NAME`** — you will need it again in Step 7 to merge back.
 
 ### Step 1 — Inspect the structure (no PDF body in context)
 
@@ -167,8 +190,48 @@ every diagram renders** — mermaid runs client-side, so a broken graph shows a 
 error box instead of an SVG and the build won't catch it. Open each read step that
 has a diagram and glance at it.
 
+### Step 7 — Commit, merge to main, push
+
+All authoring is done and validation is green. Now land the work:
+
+**7a. Commit in the worktree** (still on the `$WT_NAME` branch):
+
+```bash
+# Stage all new subject files and the updated index
+git add src/data/<subject-id>.ts src/data/md/<prefix>-*.md src/data/index.ts
+git commit -m "$(cat <<'EOF'
+Onboard <title>: <one-line description>
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+EOF
+)"
+```
+
+Replace `<title>` with the subject's display name and `<one-line description>` with
+a concise summary (e.g. "5 lessons, cosine-schedule code challenge, 3-stage scenario").
+
+**7b. Return to `main` and merge**:
+
+Call `ExitWorktree` with `action: "keep"` — this switches the session back to the
+main repo root without deleting the worktree or its commits.
+
+```bash
+git merge --no-ff $WT_NAME
+git push origin main
+```
+
+Use `--no-ff` to preserve the branch history in the merge commit.
+
+**7c. Clean up**:
+
+```bash
+git worktree remove .claude/worktrees/$WT_NAME
+git branch -d $WT_NAME
+```
+
 ## Success criteria
 
+- [ ] **Worktree created** (`EnterWorktree`) before any source files are touched.
 - [ ] PDF inspected via the script; **its body was never read into context
       wholesale**.
 - [ ] Chunk→module/lesson mapping decided from the structure (chapter→module for a
@@ -181,6 +244,8 @@ has a diagram and glance at it.
 - [ ] Subject registered in `src/data/index.ts`.
 - [ ] `npm run build` clean and `npx vitest run … curriculum.test.ts` green for the
       subject.
+- [ ] **Committed** on the worktree branch, **merged to `main`**, **pushed to
+      `origin/main`**, worktree and branch removed.
 
 ## Building intuition through curriculum design
 
