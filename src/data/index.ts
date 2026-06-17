@@ -37,6 +37,7 @@ import vlJepa from './vl-jepa'
 import leWorldModel from './le-world-model'
 import { leJepa } from './le-jepa'
 import { lejepaiIdentifiability } from './lejepa-identifiability'
+import { flashAttention } from './flash-attention'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -53,7 +54,7 @@ export const SUBJECTS: Subject[] = [
   reinforcementLearning,
 ]
 
-export const PAPERS: Subject[] = [backpropagation, codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron, lenetGtn, iJepa, varJepa, vjepa2, vlJepa, leWorldModel, leJepa, lejepaiIdentifiability]
+export const PAPERS: Subject[] = [backpropagation, codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron, lenetGtn, iJepa, varJepa, vjepa2, vlJepa, leWorldModel, leJepa, lejepaiIdentifiability, flashAttention]
 
 export const WHITEPAPERS: Subject[] = [vibeCodingSdlc]
 
