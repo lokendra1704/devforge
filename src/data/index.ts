@@ -37,8 +37,6 @@ import vlJepa from './vl-jepa'
 import leWorldModel from './le-world-model'
 import { leJepa } from './le-jepa'
 import { lejepaiIdentifiability } from './lejepa-identifiability'
-import rnnToTransformers from './rnn-to-transformers'
-import { flashAttention2 } from './flash-attention-2'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -55,10 +53,8 @@ export const SUBJECTS: Subject[] = [
   reinforcementLearning,
 ]
 
-/** Research papers, onboarded the same way as books but surfaced in their own section. */
-export const PAPERS: Subject[] = [backpropagation, codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron, lenetGtn, iJepa, varJepa, vjepa2, vlJepa, leWorldModel, leJepa, lejepaiIdentifiability, rnnToTransformers, flashAttention2]
+export const PAPERS: Subject[] = [backpropagation, codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron, lenetGtn, iJepa, varJepa, vjepa2, vlJepa, leWorldModel, leJepa, lejepaiIdentifiability]
 
-/** Industry whitepapers, onboarded the same way as books but surfaced in their own section. */
 export const WHITEPAPERS: Subject[] = [vibeCodingSdlc]
 
 export const ALL_SUBJECTS: Subject[] = [...SUBJECTS, ...PAPERS, ...WHITEPAPERS]
