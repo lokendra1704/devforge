@@ -8,14 +8,20 @@ export function Dashboard() {
   const allLessons = ALL_SUBJECTS.flatMap((s) => s.modules.flatMap((m) => m.lessons))
   const totalDone = allLessons.filter((l) => progress.completed[l.id]).length
 
-  // first incomplete lesson, in curriculum order
-  const nextUp = (() => {
-    for (const s of ALL_SUBJECTS)
-      for (const m of s.modules)
-        for (const l of m.lessons)
-          if (!progress.completed[l.id]) return { subject: s, lesson: l }
-    return null
-  })()
+  // Find tracks with at least one completed lesson, sorted by most recent
+  const attemptedTracks = ALL_SUBJECTS.map((subject) => {
+    const lessons = subject.modules.flatMap((m) => m.lessons)
+    const completedLessons = lessons.filter((l) => progress.completed[l.id])
+    if (completedLessons.length === 0) return null
+    const mostRecentDate = completedLessons
+      .map((l) => new Date(progress.completed[l.id]))
+      .sort((a, b) => b.getTime() - a.getTime())[0]
+    return { subject, mostRecentDate }
+  })
+    .filter((x) => x !== null)
+    .sort((a, b) => b!.mostRecentDate.getTime() - a!.mostRecentDate.getTime())
+    .slice(0, 5)
+    .map((x) => x!.subject)
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
@@ -45,22 +51,39 @@ export function Dashboard() {
         ))}
       </div>
 
-      {/* continue */}
-      {nextUp && (
-        <button
-          onClick={() => navigate(`/l/${nextUp.lesson.id}`)}
-          className="mt-6 w-full text-left rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 to-transparent px-5 py-4 hover:border-emerald-400 transition-colors group"
-        >
-          <div className="text-[11px] font-bold uppercase tracking-widest text-emerald-400">
-            ▶ Continue learning
+      {/* continue from where you left off */}
+      {attemptedTracks.length > 0 && (
+        <>
+          <h2 className="mt-10 mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500">
+            Continue from where you left off
+          </h2>
+          <div className="grid gap-3">
+            {attemptedTracks.map((subject) => {
+              const lessons = subject.modules.flatMap((m) => m.lessons)
+              const done = lessons.filter((l) => progress.completed[l.id]).length
+              return (
+                <button
+                  key={subject.id}
+                  onClick={() => navigate(`/s/${subject.id}`)}
+                  className="text-left rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 hover:border-zinc-600 hover:bg-zinc-900/80 transition-all group flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-xl">{subject.icon}</span>
+                    <div className="flex-1">
+                      <div className="font-semibold text-zinc-100 group-hover:text-white text-sm">
+                        {subject.title}
+                      </div>
+                      <div className="text-[11px] text-zinc-500 mt-0.5">
+                        {done}/{lessons.length} lessons completed
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-zinc-600 group-hover:text-zinc-300">→</span>
+                </button>
+              )
+            })}
           </div>
-          <div className="mt-1 font-semibold text-zinc-100 group-hover:text-white">
-            {nextUp.subject.icon} {nextUp.lesson.title}
-            <span className="text-zinc-500 font-normal text-sm ml-2">
-              {nextUp.subject.title} · ~{nextUp.lesson.minutes} min · +{nextUp.lesson.xp} XP
-            </span>
-          </div>
-        </button>
+        </>
       )}
 
       {/* subject grid */}
