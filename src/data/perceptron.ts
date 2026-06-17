@@ -1,4 +1,9 @@
 import type { Subject } from '../types'
+import pcMotivationMd from './md/pc-motivation.md?raw'
+import pcArchitectureMd from './md/pc-architecture.md?raw'
+import pcLearningMd from './md/pc-learning.md?raw'
+import pcResultsMd from './md/pc-results.md?raw'
+import pcLimitationsMd from './md/pc-limitations.md?raw'
 
 export const perceptron: Subject = {
   id: 'perceptron',
@@ -21,7 +26,7 @@ export const perceptron: Subject = {
             {
               kind: 'read',
               title: 'Why We Need Artificial Learning Systems',
-              markdown: 'pc-motivation'
+              markdown: pcMotivationMd
             }
           ]
         },
@@ -34,7 +39,7 @@ export const perceptron: Subject = {
             {
               kind: 'read',
               title: 'Architecture: The Three Layers',
-              markdown: 'pc-architecture'
+              markdown: pcArchitectureMd
             }
           ]
         },
@@ -47,7 +52,7 @@ export const perceptron: Subject = {
             {
               kind: 'read',
               title: 'How Learning Rules Shape Behavior',
-              markdown: 'pc-learning'
+              markdown: pcLearningMd
             }
           ]
         },
@@ -175,7 +180,7 @@ test('Predictions change after learning', () => {
             {
               kind: 'read',
               title: 'Experimental Results: Ideal and Structured Worlds',
-              markdown: 'pc-results'
+              markdown: pcResultsMd
             }
           ]
         },
@@ -188,7 +193,7 @@ test('Predictions change after learning', () => {
             {
               kind: 'read',
               title: 'Limits of Statistical Separability',
-              markdown: 'pc-limitations'
+              markdown: pcLimitationsMd
             }
           ]
         },
