@@ -26,6 +26,7 @@ import { dta } from './deep-transformers-atlas'
 import { deepQNetworks } from './deep-q-networks'
 import { phoneHarness } from './phone-harness'
 import { perceptron } from './perceptron'
+import { lenetGtn } from './lenet-gtn'
 import { vibeCodingSdlc } from './vibe-coding-sdlc'
 import { reinforcementLearning } from './reinforcement-learning'
 import { backpropagation } from './backpropagation'
@@ -46,7 +47,7 @@ export const SUBJECTS: Subject[] = [
 ]
 
 /** Research papers, onboarded the same way as books but surfaced in their own section. */
-export const PAPERS: Subject[] = [backpropagation, codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron]
+export const PAPERS: Subject[] = [backpropagation, codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron, lenetGtn]
 
 /** Industry whitepapers, onboarded the same way as books but surfaced in their own section. */
 export const WHITEPAPERS: Subject[] = [vibeCodingSdlc]
