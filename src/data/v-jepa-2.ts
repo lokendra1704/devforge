@@ -16,12 +16,12 @@ export const vjepa2: Subject = {
   accent: '#6366F1',
   modules: [
     {
-      id: 'vj-m1',
+      id: 'vj2-m1',
       title: 'Video Pretraining: Foundations',
       description: 'Self-supervised learning from 1M hours of internet video',
       lessons: [
         {
-          id: 'vj-m1-l1',
+          id: 'vj2-m1-l1',
           title: 'Motivation: Why Learn from Video?',
           minutes: 10,
           xp: 50,
@@ -48,7 +48,7 @@ export const vjepa2: Subject = {
           ],
         },
         {
-          id: 'vj-m1-l2',
+          id: 'vj2-m1-l2',
           title: 'Joint-Embedding Predictive Architecture',
           minutes: 12,
           xp: 60,
@@ -75,7 +75,7 @@ export const vjepa2: Subject = {
           ],
         },
         {
-          id: 'vj-m1-l3',
+          id: 'vj2-m1-l3',
           title: 'Scaling V-JEPA 2',
           minutes: 14,
           xp: 70,
@@ -97,7 +97,7 @@ export const vjepa2: Subject = {
           ],
         },
         {
-          id: 'vj-m1-l4',
+          id: 'vj2-m1-l4',
           title: 'Understanding Task Performance',
           minutes: 11,
           xp: 60,
@@ -126,12 +126,12 @@ export const vjepa2: Subject = {
       ],
     },
     {
-      id: 'vj-m2',
+      id: 'vj2-m2',
       title: 'Action-Conditioned Models and Robot Planning',
       description: 'From observation to action: building world models for robotics',
       lessons: [
         {
-          id: 'vj-m2-l1',
+          id: 'vj2-m2-l1',
           title: 'From Observation to Action',
           minutes: 12,
           xp: 60,
@@ -158,7 +158,7 @@ export const vjepa2: Subject = {
           ],
         },
         {
-          id: 'vj-m2-l2',
+          id: 'vj2-m2-l2',
           title: 'Robot Manipulation Results',
           minutes: 13,
           xp: 70,
@@ -187,12 +187,12 @@ export const vjepa2: Subject = {
       ],
     },
     {
-      id: 'vj-m3',
+      id: 'vj2-m3',
       title: 'Video Understanding and Language Alignment',
       description: 'Multiple downstream tasks from a single representation',
       lessons: [
         {
-          id: 'vj-m3-l1',
+          id: 'vj2-m3-l1',
           title: 'Understanding Motion and Appearance',
           minutes: 11,
           xp: 60,
@@ -201,7 +201,7 @@ export const vjepa2: Subject = {
           ],
         },
         {
-          id: 'vj-m3-l2',
+          id: 'vj2-m3-l2',
           title: 'Action Anticipation from Context',
           minutes: 12,
           xp: 65,
@@ -228,7 +228,7 @@ export const vjepa2: Subject = {
           ],
         },
         {
-          id: 'vj-m3-l3',
+          id: 'vj2-m3-l3',
           title: 'Video Question Answering with Language',
           minutes: 13,
           xp: 70,
