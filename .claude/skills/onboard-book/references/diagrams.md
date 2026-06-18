@@ -1,5 +1,10 @@
 # Diagrams in `read` steps (Mermaid)
 
+This file is for diagrams **you draw** to make a reasoning step visible. If you
+want to reproduce a real, named figure from the source exactly (an architecture
+box diagram, a system diagram) rather than redraw it, see
+[figures.md](figures.md) instead.
+
 `read` markdown is rendered by `src/lib/Markdown.tsx` (marked + a custom code renderer).
 A fenced ```mermaid block becomes a live SVG: mermaid is **lazy-loaded** (dynamic
 `import('mermaid')`, code-split) so it only ships on pages that actually contain a diagram,
@@ -58,6 +63,15 @@ true at rest.
   diamonds for branching/routing, `[[Queue]]` for queues/subroutines, `(("Cache"))` circles.
 - **Don't set colors/themes** — the renderer themes everything for dark mode. Hardcoded
   `style`/`classDef` colors will clash.
+- **Dotted edges need spaces and a quoted label — this is a recurring bug across onboarded
+  subjects.** Write `A -. "label" .-> B`, never `A -.label.->B`. The unspaced/unquoted form
+  parses in some mermaid playgrounds but throws in this app's renderer, and it is *not*
+  caught by `npm run build` (mermaid only runs client-side) — only a real render, or the
+  grep below, catches it:
+  ```bash
+  grep -n '\-\..*\.->' src/data/md/<prefix>-*.md
+  ```
+  Run this on every new `.md` file before merging, even if you also checked in the browser.
 - Direction: `LR` reads like a request flowing left→right (pipelines, funnels, request
   paths); `TB` suits hierarchies and fan-out (routers, taxonomies, multi-DC).
 - Keep the source ASCII-safe where you can; `→ × ÷ ≈ ·` render fine inside quoted labels.

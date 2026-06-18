@@ -41,8 +41,10 @@ lines of each.
      knows it — don't pad.
   3. **Core approach** (`read` + diagrams) — the method/architecture section.
      Reproduce the paper's main figure (architecture diagram, algorithm flow, data
-     flow) as a mermaid diagram. See
-     [diagrams.md](diagrams.md) and §4 below.
+     flow) — either as a mermaid diagram, or, when it's a named figure where exact
+     fidelity matters (a model architecture box diagram like a Transformer's
+     "Figure 1"), extracted directly from the PDF. See
+     [diagrams.md](diagrams.md), [figures.md](figures.md), and §4 below.
   4. **Results** (`read`, + `code` if there's a clean formula) — turn the headline
      numbers into a markdown table; add a `code` challenge only if the paper
      states a derivable relationship (e.g. memory O(N) vs O(N²), a speedup ratio,
@@ -77,10 +79,15 @@ If the whole paper is under ~12k tokens (check the `outline`/`sections` output's
 
 - **Citations**: cite `Section 3.2`, `Figure 2`, `Table 1`, `Eq. 4` — not
   chapter/page.
-- **Figures → diagrams**: an architecture/system diagram → `flowchart`; a
-  request/data flow with ordering → `sequenceDiagram`; an algorithm's control flow
-  → `flowchart`. See [diagrams.md](diagrams.md) for syntax, node-count limits, and
-  the quality bar — the same rules apply.
+- **Figures → diagrams or extraction**: an architecture/system diagram you're
+  redrawing for teaching clarity → `flowchart`; a request/data flow with ordering
+  → `sequenceDiagram`; an algorithm's control flow → `flowchart`. See
+  [diagrams.md](diagrams.md) for syntax, node-count limits, and the quality bar.
+  But when the figure is the paper's own named diagram and exact fidelity matters
+  more than editability (the canonical "Figure 1" architecture box diagram is the
+  common case), extract it from the PDF instead of redrawing — see
+  [figures.md](figures.md) for `slice_pdf.py figures`/`extract-figure` and the
+  placeholder-token convention for embedding it.
 - **Plots/curves → tables, not diagrams**: mermaid can't draw line/bar charts. Pull
   2–4 headline numbers from a results figure or table into a markdown table
   instead of attempting to diagram it.

@@ -8,6 +8,10 @@ The data contract a new subject must satisfy. Source of truth: `src/types.ts` an
 - `src/data/<subject-id>.ts` — exports a `Subject` object (the lessons live here as data).
 - `src/data/md/<prefix>-*.md` — prose for `read` steps, imported with `?raw`:
   `import introMd from './md/<prefix>-intro.md?raw'`.
+- `src/data/img/<prefix>-*.png` — optional: real figures extracted from the source
+  PDF (not redrawn diagrams — those stay inline as mermaid in the `.md`). Imported
+  as a normal Vite asset and spliced into the markdown via a placeholder-token
+  `.replace()`; see [figures.md](figures.md).
 - `src/data/index.ts` — register the subject: add an import and append it to the
   `SUBJECTS: Subject[]` array. **If it isn't in `SUBJECTS`, it does not exist to the app.**
 

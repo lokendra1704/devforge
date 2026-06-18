@@ -30,11 +30,93 @@ Never read the PDF body wholesale. Instead:
 
 ## Before you start
 
-Read [references/subject-schema.md](references/subject-schema.md) — the `Subject`
-data contract, the validation rules, and the **closed `visualizer` union** (you may
-not add visualizers; use `read` / `quiz` / `scenario` / `code` only). Use
-`src/data/gpu.ts` as the structural template and `src/data/md/gpu-why.md` for
-markdown voice.
+The full `Subject`/`Module`/`Lesson`/`Step` shape — including a multi-module
+skeleton — is reproduced below so you never need to open `src/types.ts` or grep an
+existing subject file (e.g. `flash-attention-2.ts`, `deep-transformers-atlas.ts`)
+just to recall the structure. Copy the skeleton, don't re-derive it:
+
+```ts
+import type { Subject } from '../types'
+import topicMd from './md/<prefix>-topic.md?raw'
+
+export const mySubject: Subject = {
+  id: 'my-subject',             // lowercase-kebab, e.g. 'inference-engineering'
+  title: 'My Subject',
+  tagline: 'One sentence.',
+  icon: '📦',                    // emoji
+  accent: '#22d3ee',             // hex, distinct from existing subjects
+  modules: [                     // ONE ARRAY ENTRY PER MODULE — copy this whole
+                                  // block again for module 2, 3, ... (same shape,
+                                  // new id/title/description/lessons each time)
+    {
+      id: '<prefix>-m1',          // <prefix>-m1, <prefix>-m2, ... sequential
+      title: 'Module 1 title',
+      description: 'One sentence on what this module covers and why.',
+      lessons: [                  // 1+ lessons per module
+        {
+          id: '<prefix>-topic',   // globally unique across EVERY subject in the repo
+          title: 'Lesson title',
+          minutes: 10,
+          xp: 60,
+          steps: [
+            { kind: 'read', title: 'Step title', markdown: topicMd },
+            {
+              kind: 'quiz',
+              title: 'Step title',
+              questions: [
+                // >=2 options, answer = valid index, explanation > 20 chars
+                { prompt: '...', options: ['...', '...'], answer: 0, explanation: '...(>20 chars)...' },
+              ],
+            },
+            {
+              kind: 'code',
+              title: 'Step title',
+              challenge: {
+                prompt: '...markdown prompt...',
+                starterCode: 'function f() { /* TODO — must FAIL the tests as-is */ }',
+                solution: 'function f() { /* must PASS every test below */ }',
+                tests: `test('name', () => { assertEqual(f(), expected); });`, // >=3 test(...) calls
+              },
+            },
+            {
+              kind: 'scenario',
+              title: 'Step title',
+              scenario: {
+                intro: '...',
+                stages: [
+                  {
+                    situation: '...',
+                    question: '...',
+                    options: [
+                      // >=2 options, exactly one (or more) quality: 'best'
+                      { label: '...', quality: 'best', feedback: '...' },
+                      { label: '...', quality: 'bad', feedback: '...' },
+                    ],
+                  },
+                ],
+                debrief: '...',
+              },
+            },
+          ],
+        },
+      ],
+    },
+    // Module 2 goes here: { id: '<prefix>-m2', title: ..., description: ..., lessons: [...] }
+    // A multi-module subject is just this `modules` array with more entries — nothing
+    // else about the file changes (one set of top-level imports covers every module).
+  ],
+}
+```
+
+Step kinds are `read | quiz | code | scenario` only — `visualizer` is a **closed
+union** (`'two-pointers' | 'sliding-window' | 'binary-search'`) that a new subject
+cannot extend without changing app code. Never emit a `visualizer` step.
+
+This skeleton covers the shape you need for every run. Only open
+[references/subject-schema.md](references/subject-schema.md) if something is
+genuinely ambiguous (it also documents naming conventions and the full validation
+rules, repeated in Step 4/6 below). Use `src/data/gpu.ts` as a fully-written example
+and `src/data/md/gpu-why.md` for markdown voice if you want to see real prose.
 
 ## Book or paper? Pick the mode
 
@@ -157,6 +239,18 @@ For each module, `Read` only its slice file, then write:
   `scenario`, plus a `code` step where there's genuine numeric work (see schema
   reference).
 
+**Generating quiz questions: delegate, don't hand-write.** Once a lesson's `read`
+step `.md` file(s) exist, call the `quiz-question-writer` agent (`Agent` tool,
+`subagent_type: "quiz-question-writer"`) instead of drafting `QuizQuestion`
+objects yourself. Pass it a **file path** — the `src/data/md/<prefix>-<topic>.md`
+file(s) backing that lesson (or the slice file in `.book-ingest/` for the relevant
+section) — plus, if only part of the file applies, which lesson/section to target.
+It returns a `QuizQuestion[]` of 10 candidates; select/trim the subset that fits
+each `quiz` step (a step can use fewer than 10 — split across multiple `quiz`
+steps in the module if more lessons need coverage), and verify every selected
+question is answerable from that lesson's `read` content before pasting it in.
+This still must satisfy "Teach before you test" below and the validation rules.
+
 Honor the validation rules: code challenges need ≥3 tests, a passing `solution`,
 and a **failing** `starterCode`; quizzes need ≥2 options + a >20-char
 `explanation`; scenario stages need ≥2 options incl. one `quality: 'best'`; all
@@ -186,11 +280,47 @@ the edges. See [references/diagrams.md](references/diagrams.md) for the
 type-selection table, placement rules, the generation quality bar, and copy-paste
 shapes.
 
+**Or extract the real figure, when fidelity matters more than a redraw.** Some
+source figures — a named architecture diagram like a paper's "Figure 1", a system
+diagram — are worth reproducing exactly rather than redrawing in mermaid. Run
+`python .claude/skills/onboard-book/scripts/slice_pdf.py figures "$PDF"` to list
+embedded raster images per page, then `extract-figure` to pull one out (with
+transparency flattened and optional palette quantization to shrink it). See
+[references/figures.md](references/figures.md) for the full workflow, the
+placeholder-token convention for referencing an extracted image from markdown, and
+why a base64 data URI inlined directly in the `.md` file is the wrong way to do
+this (it makes the file too large for the Read/Edit tools to reopen).
+
 **Paper mode**: also read
 [references/paper-workflow.md §4](references/paper-workflow.md#4-authoring-differences-from-books)
 for citation style (`Section 3.2` / `Figure 2` / `Table 1`), turning figures into
 diagrams vs. turning result plots into tables, and when a `code` challenge is (and
 isn't) warranted.
+
+**Optional: parallel authoring for many modules.** When there are 4+ modules and
+the user wants speed, dispatch one agent per module instead of authoring
+sequentially. Use `subagent_type: "general-purpose"` (fresh agents, not `fork`) —
+a fresh agent never inherits this conversation's context, so it never sees this
+skill's later commit/merge/push steps and can't reason its way into running them.
+Even so, give every agent prompt the same hard-prohibition treatment described in
+this repo's `CLAUDE.md` ("Scoping fork agents for parallel sub-tasks"): no git
+commands, no editing `index.ts` or any file outside its own deliverables, no
+build/test runs, and an explicit stop condition ("produce these files, then stop —
+whether the overall task is finished is not your call").
+
+Each agent's deliverables are:
+1. The module's `src/data/md/<prefix>-*.md` files, written to their final location.
+2. A scratch snippet at `.book-ingest/module-<prefix>-mN.snippet.ts` containing
+   *only* the literal `import ... from '../src/data/md/<prefix>-*.md?raw'` lines it
+   needs, followed by `export const lessons = [ /* this module's full Lesson[] */ ]`.
+
+Never have parallel agents write directly to the shared `src/data/<subject-id>.ts`
+or `index.ts` — concurrent writes to the same file race. After all agents finish,
+read every snippet yourself and hand-assemble the final subject file (merge all the
+import blocks at the top, one `modules` array entry per snippet's `lessons`) before
+registering it in Step 5. This also gives you a single point to catch
+cross-module issues — duplicate ids, the mermaid gotcha below, unverified code
+challenges — before they ship.
 
 ### Step 5 — Register the subject
 
@@ -198,6 +328,24 @@ Edit `src/data/index.ts`: add `import { <subject> } from './<subject-id>'` and
 append it to the `SUBJECTS` array.
 
 ### Step 6 — Validate
+
+**Verify every `code` challenge's `solution` by actually running it**, before
+assembling/registering — don't trust an agent's self-report that "the solution
+passes its own tests" (a parallel-authoring agent can be wrong about its own work).
+Paste the `solution` body, the `tests` body, and a minimal `test`/`assertEqual`
+shim into a scratch file and run it with `node`:
+
+```bash
+node -e "
+function assertEqual(a, b, msg) { if (JSON.stringify(a) !== JSON.stringify(b)) { console.error('FAIL:', msg); process.exitCode = 1; } else console.log('PASS:', msg); }
+function test(name, fn) { fn(); }
+<paste solution here>
+<paste tests here>
+"
+```
+
+Also confirm the `starterCode` actually fails at least one test (that's the "there
+must be something to do" requirement) — swap it in for the solution and rerun.
 
 ```bash
 npm run build            # tsc -b && vite build — type-checks the new subject
@@ -217,9 +365,13 @@ npx vitest run --testTimeout=8000 --bail=1 src/data/curriculum.test.ts
 
 Hard rules — violating these is what makes the hang look unkillable:
 
-- **Run it ONCE, in the foreground.** Do **not** launch a second run while one may
-  still be alive — concurrent runs compete and spawn orphan workers that peg a core
-  and survive `pkill`, so every later run looks dead too.
+- **Run it ONCE, in the foreground, period — no exceptions for "just a filtered
+  rerun."** Do **not** launch a second invocation for any reason (a `-t` filter to
+  double-check one subject, a "quick" re-run to confirm) while the first may still
+  be alive — concurrent runs compete and spawn orphan workers that peg a core and
+  survive `pkill`, so every later run looks dead too. If you genuinely need a
+  second look, `pkill -9 -f forks.js; pkill -9 -f vitest` again first, every time,
+  even if you believe the first run already exited.
 - **Don't background it and don't pipe through `tail`.** Backgrounding + `tail`
   buffering hides output until an EOF that never arrives, making a fast test look
   hung. Just run it foreground and read the result.
@@ -245,6 +397,19 @@ every diagram renders** — mermaid runs client-side, so a broken graph shows a 
 error box instead of an SVG and the build won't catch it. Open each read step that
 has a diagram and glance at it.
 
+**If the browser tool is unavailable** (e.g. a chrome-devtools MCP session is held
+by another concurrent agent and errors with "browser is already running"), don't
+skip the check — substitute a manual grep of every new `.md` file for the known
+mermaid syntax footguns, especially the dotted-edge gotcha (see
+[references/diagrams.md](references/diagrams.md)):
+
+```bash
+grep -n '\-\..*\.->' src/data/md/<prefix>-*.md   # flags `-.label.->` (missing spaces/quotes)
+```
+
+Anything this matches needs fixing before merge — it will render as a parse error,
+not a missing edge.
+
 ### Step 7 — Commit, merge to main, push
 
 All authoring is done and validation is green. Now land the work:
@@ -254,6 +419,8 @@ All authoring is done and validation is green. Now land the work:
 ```bash
 # Stage all new subject files and the updated index
 git add src/data/<subject-id>.ts src/data/md/<prefix>-*.md src/data/index.ts
+# If any read step extracted a real figure (see references/figures.md), also:
+git add src/data/img/<prefix>-*.png
 git commit -m "$(cat <<'EOF'
 Onboard <title>: <one-line description>
 
@@ -295,6 +462,10 @@ git branch -d $WT_NAME
 - [ ] Read steps carry **diagrams** where the source did — right type, anchored to
       the prose, and confirmed rendering in `npm run dev` (see
       references/diagrams.md).
+- [ ] Named source figures worth reproducing exactly (e.g. an architecture
+      diagram) are **extracted** via `slice_pdf.py figures`/`extract-figure`, not
+      redrawn, and referenced via the placeholder-token convention — never a
+      base64 data URI inlined in the `.md` file (see references/figures.md).
 - [ ] Read steps are written in the *Head First* voice — conversational, a concrete
       hook before the abstraction, no unbroken walls of prose, sparing Q&A callouts
       for the obvious misconception (see "Voice: write like Head First").
