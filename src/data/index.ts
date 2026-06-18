@@ -49,6 +49,7 @@ import { astra } from './astra'
 import { autonomousMachineIntelligence } from './autonomous-machine-intelligence'
 import { transformer } from './transformer'
 import { layerNormalization } from './layer-normalization'
+import { gruRnnEncoderDecoder } from './gru-rnn-encoder-decoder'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -66,7 +67,7 @@ export const SUBJECTS: Subject[] = [
 ]
 
 /** Research papers, onboarded the same way as books but surfaced in their own section. */
-export const PAPERS: Subject[] = [backpropagation, codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron, lenetGtn, iJepa, varJepa, vjepa2, vlJepa, leWorldModel, leJepa, lejepaiIdentifiability, flashAttention, flashAttention2, llmJepa, deepResidualLearning, alexnet, fastContext, metaclaw, clawGui, astra, autonomousMachineIntelligence, transformer, layerNormalization]
+export const PAPERS: Subject[] = [backpropagation, codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron, lenetGtn, iJepa, varJepa, vjepa2, vlJepa, leWorldModel, leJepa, lejepaiIdentifiability, flashAttention, flashAttention2, llmJepa, deepResidualLearning, alexnet, fastContext, metaclaw, clawGui, astra, autonomousMachineIntelligence, transformer, layerNormalization, gruRnnEncoderDecoder]
 
 export const WHITEPAPERS: Subject[] = [vibeCodingSdlc]
 
