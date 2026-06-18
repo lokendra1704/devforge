@@ -32,3 +32,4 @@ dist-ssr
 *.pyc.book-ingest/
 *pyc.book-ingest/
 .book-ingest/
+.book-ingest/
