@@ -15,27 +15,54 @@ That's exactly the shape the Transformer takes:
 > element at a time." — *Section 3*
 
 Both halves are stacks of `N = 6` *identical* layers — same structure repeated six
-times, with different learned weights at each depth.
+times, with different learned weights at each depth. This is Figure 1 from the
+paper, redrawn as a flowchart so it reads the same bottom-to-top way the original
+does — inputs and outputs at the bottom, output probabilities at the top:
 
 ```mermaid
-flowchart TD
-  subgraph Encoder["Encoder x6"]
-    E1["Multi-head self-attention"] --> E2["Add & LayerNorm"]
-    E2 --> E3["Feed-forward network"]
-    E3 --> E4["Add & LayerNorm"]
+flowchart BT
+  Inputs["Inputs"] --> InEmb["Input Embedding"]
+  InEmb --> InSum["+"]
+  PosEnc1["Positional Encoding"] --> InSum
+
+  subgraph EncoderStack["Encoder, repeated Nx"]
+    InSum --> EncMHA["Multi-Head Attention"]
+    EncMHA --> EncAdd1["Add & Norm"]
+    InSum --> EncAdd1
+    EncAdd1 --> EncFF["Feed Forward"]
+    EncFF --> EncAdd2["Add & Norm"]
+    EncAdd1 --> EncAdd2
   end
-  subgraph Decoder["Decoder x6"]
-    D1["Masked multi-head self-attention"] --> D2["Add & LayerNorm"]
-    D2 --> D3["Encoder-decoder attention"]
-    D3 --> D4["Add & LayerNorm"]
-    D4 --> D5["Feed-forward network"]
-    D5 --> D6["Add & LayerNorm"]
+
+  Outputs["Outputs (shifted right)"] --> OutEmb["Output Embedding"]
+  OutEmb --> OutSum["+"]
+  PosEnc2["Positional Encoding"] --> OutSum
+
+  subgraph DecoderStack["Decoder, repeated Nx"]
+    OutSum --> DecMaskedMHA["Masked Multi-Head Attention"]
+    DecMaskedMHA --> DecAdd1["Add & Norm"]
+    OutSum --> DecAdd1
+    DecAdd1 --> DecMHA["Multi-Head Attention"]
+    DecMHA --> DecAdd2["Add & Norm"]
+    DecAdd1 --> DecAdd2
+    DecAdd2 --> DecFF["Feed Forward"]
+    DecFF --> DecAdd3["Add & Norm"]
+    DecAdd2 --> DecAdd3
   end
-  Input["Input embeddings + positions"] --> Encoder
-  Encoder --> D3
-  Output["Output embeddings + positions"] --> Decoder
-  Decoder --> Final["Linear + softmax -> next token"]
+
+  EncAdd2 -- "K, V" --> DecMHA
+
+  DecAdd3 --> Linear["Linear"]
+  Linear --> Softmax["Softmax"]
+  Softmax --> OutProbs["Output Probabilities"]
 ```
+
+Every "Add & Norm" box is a residual connection (the sub-layer's output added back
+to its input) followed by layer normalization — that's the
+`LayerNorm(x + Sublayer(x))` rule the next section quotes directly. Notice the
+encoder's final output (labeled `K, V` above) feeds into the decoder's *second*
+attention sub-layer, not its first — that's the encoder-decoder attention bridge
+covered below.
 
 ### The encoder: two sub-layers, repeated six times
 
