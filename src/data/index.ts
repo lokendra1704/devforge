@@ -53,6 +53,7 @@ import { gruRnnEncoderDecoder } from './gru-rnn-encoder-decoder'
 import { bahdanauAttention } from './bahdanau-attention'
 import { xception } from './xception'
 import { languageWorldModels } from './language-world-models'
+import { worldModelSelfDistillation } from './world-model-self-distillation'
 
 export const SUBJECTS: Subject[] = [
   dsa,
@@ -70,7 +71,7 @@ export const SUBJECTS: Subject[] = [
 ]
 
 /** Research papers, onboarded the same way as books but surfaced in their own section. */
-export const PAPERS: Subject[] = [backpropagation, codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron, lenetGtn, iJepa, varJepa, vjepa2, vlJepa, leWorldModel, leJepa, lejepaiIdentifiability, flashAttention, flashAttention2, llmJepa, deepResidualLearning, alexnet, fastContext, metaclaw, clawGui, astra, autonomousMachineIntelligence, transformer, layerNormalization, gruRnnEncoderDecoder, bahdanauAttention, xception, languageWorldModels]
+export const PAPERS: Subject[] = [backpropagation, codeAsAgentHarness, clawvm, sira, intrinsicDimension, lora, agenticAiAdaptation, craftCreativeGeneration, skillOpt, claudeCodeArchitecture, lossLandscapeAnalysis, mctsOptions, monteCarloTreeDiffusion, dta, deepQNetworks, phoneHarness, perceptron, lenetGtn, iJepa, varJepa, vjepa2, vlJepa, leWorldModel, leJepa, lejepaiIdentifiability, flashAttention, flashAttention2, llmJepa, deepResidualLearning, alexnet, fastContext, metaclaw, clawGui, astra, autonomousMachineIntelligence, transformer, layerNormalization, gruRnnEncoderDecoder, bahdanauAttention, xception, languageWorldModels, worldModelSelfDistillation]
 
 export const WHITEPAPERS: Subject[] = [vibeCodingSdlc]
 
